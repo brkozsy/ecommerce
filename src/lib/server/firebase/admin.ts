@@ -13,7 +13,6 @@ function readPrivateKey() {
     return must("FIREBASE_ADMIN_PRIVATE_KEY").replace(/\\n/g, "\n");
 }
 
-// 1) önce adminApp'i oluştur
 export const adminApp =
     getApps().length > 0
         ? getApps()[0]!
@@ -25,5 +24,4 @@ export const adminApp =
             }),
         });
 
-// 2) sonra adminDb'yi üret
 export const adminDb = getFirestore(adminApp);
