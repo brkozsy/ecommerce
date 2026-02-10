@@ -1,10 +1,11 @@
 "use client";
 
-import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/types/product";
+import { useCartStore } from "@/store/cartStore";
 
 export default function AddToCartButton({ product }: { product: Product }) {
     const add = useCartStore((s) => s.add);
+    const qtyInCart = useCartStore((s) => s.items.find((i) => i.id === product.id)?.qty ?? 0);
 
     return (
         <button
@@ -12,7 +13,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
             disabled={!product.inStock}
             onClick={() => add(product)}
         >
-            Add to cart
+            Add to cart{qtyInCart ? ` • (${qtyInCart})` : ""}
         </button>
     );
 }

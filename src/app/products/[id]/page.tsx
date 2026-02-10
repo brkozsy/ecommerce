@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Product } from "@/types/product";
+import AddToCartButton from "@/components/AddToCartButton";
+
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +54,8 @@ export default async function ProductDetailPage({
                         </p>
                     </div>
                     <p className="text-2xl font-extrabold">{product.price} ₺</p>
+                    <AddToCartButton product={product} />
+
                 </div>
             </div>
         </main>
