@@ -1,79 +1,58 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { adminDb } from "@/lib/server/firebase/admin";
-import type { Timestamp } from "firebase-admin/firestore";
+import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Product = {
-    id: string;
-    title: string;
-    price: number;
-    inStock: boolean;
-    createdAt: string | null;
-};
+type ApiOk = { ok: true; item: Product };
+type ApiErr = { ok: false; error: string };
+
+async function getOrigin() {
+    const h = await headers();
+    const host = h.get("host");
+    const proto = h.get("x-forwarded-proto") ?? "http";
+    return host ? `${proto}://${host}` : null;
+}
 
 async function getProduct(id: string | undefined): Promise<Product | null> {
     if (!id) return null;
 
-    const doc = await adminDb.collection("products").doc(id).get();
-    if (!doc.exists) return null;
+    const origin = await getOrigin();
+    if (!origin) return null;
 
-    const data = doc.data() as any;
-    const ts = data.createdAt as Timestamp | undefined;
+    const res = await fetch(`${origin}/api/products/${encodeURIComponent(id)}`, {
+        cache: "no-store",
+    });
 
-    return {
-        id: doc.id,
-        title: String(data.title ?? ""),
-        price: Number(data.price ?? 0),
-        inStock: Boolean(data.inStock),
-        createdAt: ts ? ts.toDate().toISOString() : null,
-    };
+    const json = (await res.json().catch(() => null)) as ApiOk | ApiErr | null;
+    if (!res.ok || !json || (json as any).ok === false) return null;
+
+    return (json as ApiOk).item;
 }
-
 
 export default async function ProductDetailPage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
-    const p = await getProduct(params.id);
-    if (!p) notFound();
+    const { id } = await params;
+
+    const product = await getProduct(id);
+    if (!product) notFound();
 
     return (
         <main className="mx-auto max-w-3xl p-6 space-y-6">
             <div className="rounded-2xl border p-6">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold">{p.title}</h1>
+                        <h1 className="text-2xl font-bold">{product.title}</h1>
                         <p className="mt-2 text-sm opacity-70">
-                            {p.inStock ? "✅ In stock" : "⛔ Out of stock"}
+                            {product.inStock ? "✅ In stock" : "⛔ Out of stock"}
                         </p>
                     </div>
-
-                    <p className="text-2xl font-extrabold">{p.price} ₺</p>
+                    <p className="text-2xl font-extrabold">{product.price} ₺</p>
                 </div>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border p-4">
-                        <p className="text-xs opacity-70">Product ID</p>
-                        <p className="mt-1 font-mono text-sm">{p.id}</p>
-                    </div>
-
-                    <div className="rounded-2xl border p-4">
-                        <p className="text-xs opacity-70">Created At</p>
-                        <p className="mt-1 text-sm">
-                            {p.createdAt ? new Date(p.createdAt).toLocaleString("tr-TR") : "-"}
-                        </p>
-                    </div>
-                </div>
-
-                <button
-                    className="mt-6 w-full rounded-2xl border px-4 py-3 font-medium hover:bg-black/5 dark:hover:bg-white/5"
-                    disabled={!p.inStock}
-                >
-                    Add to cart (Gün 4)
-                </button>
             </div>
         </main>
     );
