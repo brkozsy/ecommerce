@@ -21,10 +21,9 @@ export default function OrdersPage() {
                 setMsg("");
                 setItems([]);
 
-                // giriş yoksa çık
+
                 if (!user?.uid) return;
 
-                // currentUser bazen geç geliyor → bekle
                 const current =
                     auth.currentUser ??
                     (await new Promise<typeof auth.currentUser>((resolve) => {

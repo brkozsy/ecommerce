@@ -1,15 +1,10 @@
-import "./globals.css";
-import Header from "@/components/Header";
-import AuthProvider from "@/components/AuthProvider";
+import Providers from "./providers";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr">
       <body>
-        <AuthProvider>
-          <Header />
-          {children}
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
