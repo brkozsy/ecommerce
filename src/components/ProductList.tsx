@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
@@ -60,34 +61,41 @@ export default function ProductList() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {data?.items.map((p) => (
                         <Link key={p.id} href={`/products/${p.id}`}>
-                            <Card className="p-5 transition hover:ring-white/30 cursor-pointer">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <h3 className="text-white font-semibold">
-                                            {p.title}
-                                        </h3>
+                            <Card className="overflow-hidden transition hover:ring-white/30 cursor-pointer">
+                                <div className="relative h-40 w-full bg-gradient-to-br from-white/10 to-white/0">
+                                    {"image" in p && (p as any).image ? (
+                                        <Image
+                                            src={(p as any).image}
+                                            alt={p.title}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                        />
+                                    ) : null}
 
-                                        <p className="mt-2 text-lg font-semibold text-white/90">
-                                            {p.price} ₺
-                                        </p>
+                                    <div className="absolute right-3 top-3">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs ring-1 backdrop-blur ${p.inStock
+                                                ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
+                                                : "bg-red-500/15 text-red-300 ring-red-400/20"
+                                                }`}
+                                        >
+                                            {p.inStock ? "In stock" : "Out of stock"}
+                                        </span>
                                     </div>
-
-                                    <span
-                                        className={`rounded-full px-3 py-1 text-xs ring-1 ${p.inStock
-                                            ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
-                                            : "bg-red-500/15 text-red-300 ring-red-400/20"
-                                            }`}
-                                    >
-                                        {p.inStock ? "In stock" : "Out of stock"}
-                                    </span>
                                 </div>
 
-                                <p className="mt-4 text-xs text-white/50">
-                                    {p.createdAt
-                                        ? new Date(p.createdAt).toLocaleString("tr-TR")
-                                        : "-"}
-                                </p>
+                                <div className="p-5">
+                                    <h3 className="text-white font-semibold">{p.title}</h3>
+
+                                    <p className="mt-2 text-lg font-semibold text-white/90">{p.price} ₺</p>
+
+                                    <p className="mt-4 text-xs text-white/50">
+                                        {p.createdAt ? new Date(p.createdAt).toLocaleString("tr-TR") : "-"}
+                                    </p>
+                                </div>
                             </Card>
+
                         </Link>
                     ))}
                 </div>
