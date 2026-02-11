@@ -31,6 +31,8 @@ export default function RegisterPage() {
                 <button className="w-full rounded-xl border px-4 py-3 font-medium hover:bg-black/5 dark:hover:bg-white/5">
                     Create account
                 </button>
+
+
             </form>
 
             {msg ? <p className="text-sm">{msg}</p> : null}
