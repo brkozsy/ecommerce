@@ -1,6 +1,5 @@
 import Link from "next/link";
 import ProductList from "@/components/ProductList";
-import TopBar from "@/components/TopBar";
 
 export default function Home() {
   return (
@@ -10,7 +9,7 @@ export default function Home() {
         <Link className="rounded-2xl border px-4 py-2" href="/cart">Cart</Link>
       </div>
       <ProductList />
-      <TopBar />
+
 
     </main>
   );
