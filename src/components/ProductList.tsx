@@ -9,6 +9,22 @@ import Card from "@/components/ui/Card";
 
 type ProductsResponse = { ok: true; items: Product[] };
 
+function SkeletonCard() {
+    return (
+        <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5 animate-pulse">
+            <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
+                    <div className="h-4 w-40 rounded bg-white/10" />
+                    <div className="h-6 w-24 rounded bg-white/10" />
+                </div>
+                <div className="h-6 w-20 rounded-full bg-white/10" />
+            </div>
+            <div className="mt-4 h-3 w-44 rounded bg-white/10" />
+        </div>
+    );
+}
+
+
 export default function ProductList() {
     const { data, error, isLoading } = useSWR<ProductsResponse>(
         "/api/products",
@@ -17,10 +33,17 @@ export default function ProductList() {
 
     if (isLoading)
         return (
-            <Container className="py-10">
-                <p className="text-white/60">Loading products...</p>
-            </Container>
+            <main className="py-10">
+                <Container>
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <SkeletonCard key={i} />
+                        ))}
+                    </div>
+                </Container>
+            </main>
         );
+
 
     if (error)
         return (
@@ -51,8 +74,8 @@ export default function ProductList() {
 
                                     <span
                                         className={`rounded-full px-3 py-1 text-xs ring-1 ${p.inStock
-                                                ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
-                                                : "bg-red-500/15 text-red-300 ring-red-400/20"
+                                            ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
+                                            : "bg-red-500/15 text-red-300 ring-red-400/20"
                                             }`}
                                     >
                                         {p.inStock ? "In stock" : "Out of stock"}
