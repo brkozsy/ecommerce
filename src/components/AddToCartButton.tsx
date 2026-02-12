@@ -1,19 +1,51 @@
 "use client";
 
-import type { Product } from "@/types/product";
 import { useCartStore } from "@/store/cartStore";
+import type { Product } from "@/types/product";
 
-export default function AddToCartButton({ product }: { product: Product }) {
+type ProductLike = {
+    id: string;
+    title: string;
+    price: number;
+    stock: number;
+    imageUrl?: string;
+    description?: string;
+};
+
+export default function AddToCartButton({ product }: { product: ProductLike }) {
     const add = useCartStore((s) => s.add);
-    const qtyInCart = useCartStore((s) => s.items.find((i) => i.id === product.id)?.qty ?? 0);
+
+    const stock = Number(product.stock ?? 0);
+    const canAdd = Number.isFinite(stock) && stock > 0;
+
+    function onAdd() {
+        if (!canAdd) return;
+
+        const p: Product = {
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            stock,
+            imageUrl: product.imageUrl || "",
+            description: product.description || "",
+            inStock: true,
+        };
+
+        add(p);
+    }
 
     return (
         <button
-            className="mt-6 w-full rounded-2xl border px-4 py-3 font-medium hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-60"
-            disabled={!product.inStock}
-            onClick={() => add(product)}
+            onClick={onAdd}
+            disabled={!canAdd}
+            className={
+                "w-full rounded-xl px-4 py-2 font-semibold shadow-sm " +
+                (canAdd
+                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                    : "cursor-not-allowed bg-zinc-200 text-zinc-500")
+            }
         >
-            Add to cart{qtyInCart ? ` • (${qtyInCart})` : ""}
+            {canAdd ? "Sepete Ekle" : "Stok yok"}
         </button>
     );
 }

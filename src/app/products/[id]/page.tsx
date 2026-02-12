@@ -1,61 +1,152 @@
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
-import type { Product } from "@/types/product";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import AddToCartButton from "@/components/AddToCartButton";
 
+type ProductDTO = {
+    id: string;
+    title: string;
+    price: number;
+    stock?: number | string | null;
+    imageUrl?: string | null;
+    description?: string | null;
+};
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-type ApiOk = { ok: true; item: Product };
-type ApiErr = { ok: false; error: string };
-
-async function getOrigin() {
-    const h = await headers();
-    const host = h.get("host");
-    const proto = h.get("x-forwarded-proto") ?? "http";
-    return host ? `${proto}://${host}` : null;
+function toNumber(v: any, fallback = 0) {
+    if (v === undefined || v === null || v === "") return fallback;
+    const n = typeof v === "string" ? Number(v) : v;
+    return Number.isFinite(n) ? n : fallback;
 }
 
-async function getProduct(id: string | undefined): Promise<Product | null> {
-    if (!id) return null;
+export default function ProductPage() {
+    const params = useParams<{ id: string }>();
+    const id = params?.id;
 
-    const origin = await getOrigin();
-    if (!origin) return null;
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState<string | null>(null);
+    const [p, setP] = useState<ProductDTO | null>(null);
 
-    const res = await fetch(`${origin}/api/products/${encodeURIComponent(id)}`, {
-        cache: "no-store",
-    });
+    useEffect(() => {
+        let alive = true;
 
-    const json = (await res.json().catch(() => null)) as ApiOk | ApiErr | null;
-    if (!res.ok || !json || (json as any).ok === false) return null;
+        async function run() {
+            if (!id) return;
 
-    return (json as ApiOk).item;
-}
+            setLoading(true);
+            setErr(null);
 
-export default async function ProductDetailPage({
-    params,
-}: {
-    params: Promise<{ id: string }>;
-}) {
-    const { id } = await params;
+            try {
+                const res = await fetch(`/api/products/${encodeURIComponent(id)}`, {
+                    cache: "no-store",
+                });
 
-    const product = await getProduct(id);
-    if (!product) notFound();
+                const data = await res.json().catch(() => null);
+
+                if (!res.ok || !data?.ok) {
+                    throw new Error(data?.error || `Request failed (${res.status})`);
+                }
+
+                if (alive) setP(data.item as ProductDTO);
+            } catch (e: any) {
+                if (alive) setErr(e?.message || "Error");
+            } finally {
+                if (alive) setLoading(false);
+            }
+        }
+
+        run();
+
+        return () => {
+            alive = false;
+        };
+    }, [id]);
+
+    if (loading) {
+        return (
+            <main className="mx-auto max-w-5xl p-6">
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+                    Loading...
+                </div>
+            </main>
+        );
+    }
+
+    if (err) {
+        return (
+            <main className="mx-auto max-w-5xl p-6">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+                    {err}
+                </div>
+            </main>
+        );
+    }
+
+    if (!p) {
+        return (
+            <main className="mx-auto max-w-5xl p-6">
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+                    Product not found
+                </div>
+            </main>
+        );
+    }
+
+    const stock = toNumber(p.stock, 0);
+    const inStock = stock > 0;
 
     return (
-        <main className="mx-auto max-w-3xl p-6 space-y-6">
-            <div className="rounded-2xl border p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold">{product.title}</h1>
-                        <p className="mt-2 text-sm opacity-70">
-                            {product.inStock ? "✅ In stock" : "⛔ Out of stock"}
-                        </p>
-                    </div>
-                    <p className="text-2xl font-extrabold">{product.price} ₺</p>
-                    <AddToCartButton product={product} />
+        <main className="mx-auto max-w-5xl p-6 text-black">
+            <div className="grid gap-6 md:grid-cols-2">
+                <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+                    {p.imageUrl ? (
+                        <img
+                            src={p.imageUrl}
+                            alt={p.title}
+                            className="h-[420px] w-full object-cover"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div className="flex h-[420px] items-center justify-center bg-zinc-100 text-zinc-500">
+                            No image
+                        </div>
+                    )}
+                </div>
 
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+                    <h1 className="text-2xl font-bold">{p.title}</h1>
+
+                    <div className="mt-3 flex items-center justify-between">
+                        <p className="text-xl font-semibold">{p.price} ₺</p>
+
+                        <span
+                            className={
+                                "rounded-full px-3 py-1 text-sm font-medium " +
+                                (inStock
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-red-50 text-red-700")
+                            }
+                        >
+                            {inStock ? `Stock: ${stock}` : "Out of stock"}
+                        </span>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-6 text-zinc-700">
+                        {p.description?.trim() ? p.description : "No description yet."}
+                    </p>
+
+                    <div className="mt-6">
+                        <AddToCartButton
+                            product={{
+                                id: p.id,
+                                title: p.title,
+                                price: p.price,
+                                stock,
+                                imageUrl: p.imageUrl ?? "",
+                                description: p.description ?? "",
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
         </main>

@@ -1,105 +1,72 @@
 "use client";
-import Image from "next/image";
 
-import useSWR from "swr";
-import { fetcher } from "@/lib/fetcher";
-import type { Product } from "@/types/product";
 import Link from "next/link";
-import Container from "@/components/Container";
-import Card from "@/components/ui/Card";
+import type { Product } from "@/types/product";
 
-type ProductsResponse = { ok: true; items: Product[] };
-
-function SkeletonCard() {
-    return (
-        <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5 animate-pulse">
-            <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
-                    <div className="h-4 w-40 rounded bg-white/10" />
-                    <div className="h-6 w-24 rounded bg-white/10" />
-                </div>
-                <div className="h-6 w-20 rounded-full bg-white/10" />
+export default function ProductList({ items }: { items: Product[] }) {
+    if (!items?.length) {
+        return (
+            <div className="rounded-2xl border border-black/10 bg-white p-6 text-zinc-600 shadow-sm">
+                No products yet.
             </div>
-            <div className="mt-4 h-3 w-44 rounded bg-white/10" />
-        </div>
-    );
-}
-
-
-export default function ProductList() {
-    const { data, error, isLoading } = useSWR<ProductsResponse>(
-        "/api/products",
-        fetcher
-    );
-
-    if (isLoading)
-        return (
-            <main className="py-10">
-                <Container>
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <SkeletonCard key={i} />
-                        ))}
-                    </div>
-                </Container>
-            </main>
         );
-
-
-    if (error)
-        return (
-            <Container className="py-10">
-                <p className="text-red-500">
-                    Error: {String(error.message ?? error)}
-                </p>
-            </Container>
-        );
+    }
 
     return (
-        <main className="py-10">
-            <Container>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {data?.items.map((p) => (
-                        <Link key={p.id} href={`/products/${p.id}`}>
-                            <Card className="overflow-hidden transition hover:ring-white/30 cursor-pointer">
-                                <div className="relative h-40 w-full bg-gradient-to-br from-white/10 to-white/0">
-                                    {"image" in p && (p as any).image ? (
-                                        <Image
-                                            src={(p as any).image}
-                                            alt={p.title}
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                        />
-                                    ) : null}
-
-                                    <div className="absolute right-3 top-3">
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs ring-1 backdrop-blur ${p.inStock
-                                                ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20"
-                                                : "bg-red-500/15 text-red-300 ring-red-400/20"
-                                                }`}
-                                        >
-                                            {p.inStock ? "In stock" : "Out of stock"}
-                                        </span>
-                                    </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((p) => {
+                const img = (p.imageUrl || "").trim(); // ✅ sadece imageUrl
+                return (
+                    <Link
+                        key={p.id}
+                        href={`/products/${p.id}`}
+                        className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                        <div className="h-44 w-full bg-zinc-100">
+                            {img ? (
+                                <img
+                                    src={img}
+                                    alt={p.title}
+                                    className="h-44 w-full object-cover"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="flex h-44 items-center justify-center text-sm text-zinc-500">
+                                    No image
                                 </div>
+                            )}
+                        </div>
 
-                                <div className="p-5">
-                                    <h3 className="text-white font-semibold">{p.title}</h3>
+                        <div className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <h3 className="line-clamp-2 text-base font-semibold text-zinc-900">
+                                    {p.title}
+                                </h3>
+                                <p className="shrink-0 text-base font-bold text-orange-600">
+                                    {p.price} ₺
+                                </p>
+                            </div>
 
-                                    <p className="mt-2 text-lg font-semibold text-white/90">{p.price} ₺</p>
+                            <div className="mt-3 flex items-center justify-between">
+                                <span
+                                    className={
+                                        "rounded-full px-3 py-1 text-xs font-medium " +
+                                        (p.stock > 0
+                                            ? "bg-emerald-50 text-emerald-700"
+                                            : "bg-red-50 text-red-700")
+                                    }
+                                >
+                                    {p.stock > 0 ? `Stock: ${p.stock}` : "Out of stock"}
+                                </span>
 
-                                    <p className="mt-4 text-xs text-white/50">
-                                        {p.createdAt ? new Date(p.createdAt).toLocaleString("tr-TR") : "-"}
-                                    </p>
-                                </div>
-                            </Card>
-
-                        </Link>
-                    ))}
-                </div>
-            </Container>
-        </main>
+                                <span className="text-xs text-zinc-500 group-hover:text-zinc-700">
+                                    View details →
+                                </span>
+                            </div>
+                        </div>
+                    </Link>
+                );
+            })}
+        </div>
     );
 }

@@ -6,6 +6,7 @@ export type CartItem = {
     id: string;
     title: string;
     price: number;
+    imageUrl?: string;
     qty: number;
 };
 
@@ -16,8 +17,8 @@ type CartState = {
     dec: (id: string) => void;
     remove: (id: string) => void;
     clear: () => void;
-    totalPrice: () => number;
     totalQty: () => number;
+    totalPrice: () => number;
 };
 
 export const useCartStore = create<CartState>()(
@@ -25,40 +26,52 @@ export const useCartStore = create<CartState>()(
         (set, get) => ({
             items: [],
 
+            // ✅ aynı ürün varsa qty +1
             add: (p) =>
-                set((s) => {
-                    const found = s.items.find((i) => i.id === p.id);
-                    if (found) {
-                        return {
-                            items: s.items.map((i) =>
-                                i.id === p.id ? { ...i, qty: i.qty + 1 } : i
-                            ),
-                        };
+                set((state) => {
+                    const idx = state.items.findIndex((x) => x.id === p.id);
+                    if (idx >= 0) {
+                        const next = [...state.items];
+                        next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+                        return { items: next };
                     }
                     return {
-                        items: [...s.items, { id: p.id, title: p.title, price: p.price, qty: 1 }],
+                        items: [
+                            ...state.items,
+                            {
+                                id: p.id,
+                                title: p.title,
+                                price: p.price,
+                                imageUrl: p.imageUrl || "",
+                                qty: 1,
+                            },
+                        ],
                     };
                 }),
 
             inc: (id) =>
-                set((s) => ({
-                    items: s.items.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)),
+                set((state) => ({
+                    items: state.items.map((x) => (x.id === id ? { ...x, qty: x.qty + 1 } : x)),
                 })),
 
             dec: (id) =>
-                set((s) => ({
-                    items: s.items
-                        .map((i) => (i.id === id ? { ...i, qty: i.qty - 1 } : i))
-                        .filter((i) => i.qty > 0),
+                set((state) => ({
+                    items: state.items
+                        .map((x) => (x.id === id ? { ...x, qty: x.qty - 1 } : x))
+                        .filter((x) => x.qty > 0),
                 })),
 
-            remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+            remove: (id) =>
+                set((state) => ({
+                    items: state.items.filter((x) => x.id !== id),
+                })),
 
             clear: () => set({ items: [] }),
 
-            totalPrice: () => get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
-            totalQty: () => get().items.reduce((sum, i) => sum + i.qty, 0),
+            totalQty: () => get().items.reduce((sum, x) => sum + x.qty, 0),
+
+            totalPrice: () => get().items.reduce((sum, x) => sum + x.qty * x.price, 0),
         }),
-        { name: "cart-v1" }
+        { name: "cart-store" }
     )
 );

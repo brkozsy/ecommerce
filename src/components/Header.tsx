@@ -1,83 +1,85 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase/client";
-import { signOut } from "firebase/auth";
+import { useCartStore } from "@/store/cartStore";
+import { useAuthStore } from "@/store/authStore";
 
 export default function Header() {
-    const [userEmail, setUserEmail] = useState<string | null>(null);
-    const [isAdmin, setIsAdmin] = useState(false);
-
-    useEffect(() => {
-        const unsub = auth.onAuthStateChanged((user) => {
-            if (!user) {
-                setUserEmail(null);
-                setIsAdmin(false);
-                return;
-            }
-
-            setUserEmail(user.email);
-
-            const adminEmails =
-                process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(",") || [];
-
-            setIsAdmin(adminEmails.includes(user.email || ""));
-        });
-
-        return () => unsub();
-    }, []);
-
-    async function handleLogout() {
-        await signOut(auth);
-    }
+    const total = useCartStore((s) => s.totalQty());
+    const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+    const user = useAuthStore((s) => s.user);
+    const logout = useAuthStore((s) => s.logout);
 
     return (
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex h-16 items-center justify-between">
-                {/* Logo */}
-                <Link
-                    href="/"
-                    className="text-lg font-semibold tracking-tight text-white"
-                >
-                    E-commerce
+        <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
+            {/* Campaign bar */}
+            <div className="bg-gradient-to-r from-orange-500 to-sky-500">
+                <div className="container-page flex items-center justify-between py-2">
+                    <p className="text-xs font-semibold text-white">
+                        🚚 500₺ üzeri kargo bedava • 🔒 Güvenli ödeme • ↩️ Kolay iade
+                    </p>
+                    <p className="text-xs text-white/90">Destek: 09:00–18:00</p>
+                </div>
+            </div>
+
+            {/* Main header */}
+            <div className="container-page flex items-center justify-between py-4">
+                <Link href="/" className="text-lg font-extrabold tracking-tight">
+                    <span className="text-orange-600">Shop</span>
+                    <span className="text-slate-900">Next</span>
                 </Link>
 
-                {/* Right Side */}
-                <div className="flex items-center gap-3">
-
-                    {/* Admin Butonu */}
-                    {isAdmin && (
-                        <Link href="/admin">
-                            <button className="rounded-xl bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600 transition">
-                                Admin Panel
-                            </button>
-                        </Link>
-                    )}
-
-                    {/* Cart */}
-                    <Link href="/cart">
-                        <button className="rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition">
-                            Cart
-                        </button>
+                <nav className="flex items-center gap-2">
+                    <Link
+                        href="/"
+                        className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                        Home
                     </Link>
 
-                    {/* Login / Logout */}
-                    {!userEmail ? (
-                        <Link href="/login">
-                            <button className="rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition">
-                                Login
+                    <Link
+                        href="/cart"
+                        className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                        Cart{" "}
+                        <span className="ml-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
+                            {total}
+                        </span>
+                    </Link>
+
+                    {isLoggedIn ? (
+                        <>
+                            <Link
+                                href="/admin/products"
+                                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                                Admin
+                            </Link>
+
+                            <button
+                                onClick={logout}
+                                className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                            >
+                                Logout{user?.email ? ` • ${user.email}` : ""}
                             </button>
-                        </Link>
+                        </>
                     ) : (
-                        <button
-                            onClick={handleLogout}
-                            className="rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition"
-                        >
-                            Logout
-                        </button>
+                        <>
+                            <Link
+                                href="/login"
+                                className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                            >
+                                Login
+                            </Link>
+                            <Link
+                                href="/register"
+                                className="rounded-xl border border-black/10 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                            >
+                                Register
+                            </Link>
+                        </>
                     )}
-                </div>
+                </nav>
             </div>
         </header>
     );

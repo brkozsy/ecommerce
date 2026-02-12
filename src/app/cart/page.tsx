@@ -12,10 +12,8 @@ export default function CartPage() {
 
     const items = useCartStore((s) => s.items);
 
-    const total = items.reduce(
-        (sum: number, i: any) => sum + Number(i.price) * Number(i.quantity ?? 1),
-        0
-    );
+    // ✅ quantity değil qty
+    const total = items.reduce((sum, i) => sum + Number(i.price) * Number(i.qty ?? 1), 0);
 
     return (
         <main className="py-10">
@@ -33,24 +31,20 @@ export default function CartPage() {
                     <div className="mt-6 grid gap-6 lg:grid-cols-3">
                         {/* Ürünler */}
                         <div className="lg:col-span-2 space-y-4">
-                            {items.map((item: any) => {
-                                const qty = Number(item.quantity ?? 1);
+                            {items.map((item) => {
+                                const qty = Number(item.qty ?? 1); // ✅
                                 const price = Number(item.price);
                                 const lineTotal = price * qty;
 
                                 return (
-                                    <Card key={item.id ?? item.slug} className="p-5">
+                                    <Card key={item.id} className="p-5">
                                         <div className="flex items-center justify-between gap-4">
                                             <div>
-                                                <h3 className="text-white font-semibold">
-                                                    {item.title ?? item.name}
-                                                </h3>
+                                                <h3 className="text-white font-semibold">{item.title}</h3>
                                                 <p className="text-sm text-white/60">Adet: {qty}</p>
                                             </div>
 
-                                            <div className="text-white font-semibold">
-                                                {lineTotal} ₺
-                                            </div>
+                                            <div className="text-white font-semibold">{lineTotal} ₺</div>
                                         </div>
                                     </Card>
                                 );
@@ -66,10 +60,7 @@ export default function CartPage() {
                                 <span className="text-white font-semibold">{total} ₺</span>
                             </div>
 
-                            <Button
-                                className="mt-6 w-full"
-                                onClick={() => router.push("/checkout")}
-                            >
+                            <Button className="mt-6 w-full" onClick={() => router.push("/checkout")}>
                                 Siparişi Tamamla
                             </Button>
                         </Card>

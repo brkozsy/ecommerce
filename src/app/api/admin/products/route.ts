@@ -4,9 +4,10 @@ import { requireAdmin } from "@/lib/server/auth/adminGuard";
 
 export const runtime = "nodejs";
 
-function num(v: any, fallback = 0) {
+function toNumberStrict(v: any) {
+    if (v === undefined || v === null || v === "") return NaN;
     const n = typeof v === "string" ? Number(v) : v;
-    return Number.isFinite(n) ? n : fallback;
+    return Number.isFinite(n) ? n : NaN;
 }
 
 export async function GET() {
@@ -38,12 +39,18 @@ export async function POST(req: Request) {
         const title = String(body.title || "").trim();
         const description = String(body.description || "").trim();
         const imageUrl = String(body.imageUrl || "").trim();
-        const price = num(body.price, NaN);
-        const stock = num(body.stock, 0);
+
+        const price = toNumberStrict(body.price);
+        const stockRaw = toNumberStrict(body.stock);
+        const stock = Math.floor(stockRaw); // stok tam sayı
+
         const isActive = body.isActive !== false; // default true
 
         if (!title) return NextResponse.json({ ok: false, error: "title required" }, { status: 400 });
         if (!Number.isFinite(price)) return NextResponse.json({ ok: false, error: "price must be number" }, { status: 400 });
+        if (!Number.isFinite(stockRaw) || stock < 0) {
+            return NextResponse.json({ ok: false, error: "stock must be 0 or positive integer" }, { status: 400 });
+        }
 
         const now = new Date();
 
