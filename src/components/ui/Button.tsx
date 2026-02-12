@@ -12,17 +12,14 @@ export default function Button({
     ...props
 }: Props) {
     const base =
-        "inline-flex items-center justify-center rounded-xl font-medium transition " +
-        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black " +
+        "inline-flex items-center justify-center rounded-xl font-semibold transition " +
+        "focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:ring-offset-2 focus:ring-offset-white " +
         "disabled:opacity-50 disabled:pointer-events-none";
 
     const variants = {
-        primary:
-            "bg-white text-black hover:bg-white/90 focus:ring-white",
-        secondary:
-            "bg-white/10 text-white hover:bg-white/15 ring-1 ring-white/15 focus:ring-white/60",
-        ghost:
-            "bg-transparent text-white hover:bg-white/10 focus:ring-white/60",
+        primary: "bg-orange-600 text-white hover:bg-orange-700",
+        secondary: "bg-slate-900 text-white hover:bg-slate-800",
+        ghost: "bg-transparent text-slate-700 hover:bg-slate-100",
     };
 
     const sizes = {
@@ -32,9 +29,6 @@ export default function Button({
     };
 
     return (
-        <button
-            className={cn(base, variants[variant], sizes[size], className)}
-            {...props}
-        />
+        <button className={cn(base, variants[variant], sizes[size], className)} {...props} />
     );
 }

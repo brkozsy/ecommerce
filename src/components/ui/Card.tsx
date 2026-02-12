@@ -10,8 +10,7 @@ export default function Card({
     return (
         <div
             className={cn(
-                "rounded-2xl bg-gradient-to-b from-white/10 to-white/5 " +
-                "ring-1 ring-white/15 backdrop-blur-xl",
+                "rounded-2xl border border-black/10 bg-white shadow-sm",
                 className
             )}
         >

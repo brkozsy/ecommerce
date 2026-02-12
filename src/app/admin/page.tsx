@@ -1,80 +1,110 @@
 "use client";
 
-import useSWR from "swr";
-import { auth } from "@/lib/firebase/client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { auth } from "@/lib/firebase/client";
+import { DollarSign, Package, Users, ShoppingBag, Plus, Loader2 } from "lucide-react";
 
-async function authedJson(url: string) {
-    const u = auth.currentUser;
-    if (!u) throw new Error("LOGIN_REQUIRED");
+const formatPrice = (price: number) =>
+    new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(price);
 
-    const token = await u.getIdToken();
-    const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+export default function AdminDashboard() {
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        revenue: 0,
+        pendingCount: 0,
+        productsCount: 0,
+        customersCount: 0,
     });
 
-    const text = await res.text().catch(() => "");
-    if (!res.ok) {
-        try {
-            const j = text ? JSON.parse(text) : null;
-            if (j?.error) throw new Error(j.error);
-        } catch { }
-        if (res.status === 401) throw new Error("UNAUTHENTICATED");
-        if (res.status === 403) throw new Error("FORBIDDEN");
-        throw new Error(text || `Request failed (${res.status})`);
-    }
-    return text ? JSON.parse(text) : null;
-}
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true);
 
-function Card({ title, value, hint }: { title: string; value: string; hint?: string }) {
+                const user = auth.currentUser;
+                if (!user) throw new Error("LOGIN_REQUIRED");
+
+                const token = await user.getIdToken(true);
+
+                const res = await fetch("/api/admin/metrics", {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: "no-store",
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data?.ok) throw new Error(data?.error ?? "Metrics alınamadı");
+
+                const m = data.metrics || {};
+                setStats({
+                    revenue: Number(m.revenue ?? 0),
+                    pendingCount: Number(m.pendingCount ?? 0),
+                    productsCount: Number(m.productsCount ?? 0),
+                    customersCount: Number(m.customersCount ?? 0),
+                });
+            } catch (e) {
+                console.error("ADMIN METRICS ERROR:", e);
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
+
+    if (loading)
+        return (
+            <div className="flex h-64 w-full items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
+            </div>
+        );
+
+    const cards = [
+        { label: "Toplam Satış", value: formatPrice(stats.revenue), icon: DollarSign, color: "text-green-600", bg: "bg-green-100" },
+        { label: "Aktif Siparişler", value: String(stats.pendingCount), icon: Package, color: "text-blue-600", bg: "bg-blue-100" },
+        { label: "Müşteriler", value: String(stats.customersCount), icon: Users, color: "text-indigo-600", bg: "bg-indigo-100" },
+        { label: "Toplam Ürün", value: String(stats.productsCount), icon: ShoppingBag, color: "text-purple-600", bg: "bg-purple-100" },
+    ];
+
     return (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-            <p className="text-sm opacity-70">{title}</p>
-            <p className="mt-2 text-2xl font-semibold">{value}</p>
-            {hint ? <p className="mt-2 text-xs opacity-60">{hint}</p> : null}
-        </div>
-    );
-}
+        <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Yönetim Paneli</h1>
+                    <p className="mt-1 text-sm text-gray-500">Performans özeti.</p>
+                </div>
 
-export default function AdminDashboardPage() {
-    const { data, error, isLoading, mutate } = useSWR("/api/admin/metrics", authedJson);
-
-    if (isLoading) return <div>Yükleniyor...</div>;
-
-    if (error) {
-        const msg = String((error as any)?.message || error);
-        if (msg.includes("LOGIN_REQUIRED") || msg.includes("UNAUTHENTICATED"))
-            return <div>Admin için giriş yapmalısın.</div>;
-        if (msg.includes("FORBIDDEN")) return <div>Yetkin yok (admin değilsin).</div>;
-        return <div className="text-red-600">Hata: {msg}</div>;
-    }
-
-    const m = data?.metrics || { ordersCount: 0, pendingCount: 0, productsCount: 0, revenue: 0 };
-
-    const revenueTRY = new Intl.NumberFormat("tr-TR", {
-        style: "currency",
-        currency: "TRY",
-        maximumFractionDigits: 2,
-    }).format(m.revenue || 0);
-
-    return (
-        <div className="space-y-5">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Dashboard</h2>
-
-                <div className="flex items-center gap-2">
-                    <button className="rounded-lg border px-3 py-1 text-sm" onClick={() => mutate()}>
-                        Yenile
-                    </button>
-
+                <div className="flex gap-3">
+                    <Link
+                        href="/admin/products"
+                        className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-200 shadow-sm hover:bg-gray-50"
+                    >
+                        <ShoppingBag className="h-4 w-4" /> Ürün Listesi
+                    </Link>
+                    <Link
+                        href="/admin/products/new"
+                        className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700"
+                    >
+                        <Plus className="h-4 w-4" /> Yeni Ürün Ekle
+                    </Link>
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card title="Toplam Sipariş" value={String(m.ordersCount)} />
-                <Card title="Pending Sipariş" value={String(m.pendingCount)} hint="Kargoya verilmemiş / işlem bekleyen" />
-                <Card title="Toplam Ürün" value={String(m.productsCount)} />
-                <Card title="Ciro" value={revenueTRY} hint="Orders.total toplamı" />
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {cards.map((stat, idx) => {
+                    const Icon = stat.icon;
+                    return (
+                        <div key={idx} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                            <div className="flex items-center gap-4">
+                                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bg}`}>
+                                    <Icon className={`h-6 w-6 ${stat.color}`} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                                    <p className="mt-1 text-xl font-bold text-gray-900">{stat.value}</p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

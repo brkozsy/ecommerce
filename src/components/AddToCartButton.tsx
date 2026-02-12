@@ -25,7 +25,7 @@ export default function AddToCartButton({ product }: { product: ProductLike }) {
             id: product.id,
             title: product.title,
             price: product.price,
-            stock,
+
             imageUrl: product.imageUrl || "",
             description: product.description || "",
             inStock: true,

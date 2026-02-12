@@ -1,86 +1,148 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
+import { ShoppingBag, LogOut, Zap, LayoutDashboard } from "lucide-react";
+
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
 
 export default function Header() {
-    const total = useCartStore((s) => s.totalQty());
-    const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-    const user = useAuthStore((s) => s.user);
-    const logout = useAuthStore((s) => s.logout);
+    const router = useRouter();
+
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    // Store verileri
+    const totalQty = useCartStore((s: any) => (s.totalQty ? s.totalQty() : 0));
+    const user = useAuthStore((s: any) => s.user);
+
+    // ✅ Admin kontrolü (doğru)
+    const isAdmin =
+        !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+
+    useEffect(() => {
+        setMounted(true);
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const handleLogout = async () => {
+        await signOut(auth);
+        router.push("/");
+        router.refresh();
+    };
+
+    if (!mounted)
+        return <div className="h-20 w-full bg-white border-b border-gray-100"></div>;
 
     return (
-        <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
-            {/* Campaign bar */}
-            <div className="bg-gradient-to-r from-orange-500 to-sky-500">
-                <div className="container-page flex items-center justify-between py-2">
-                    <p className="text-xs font-semibold text-white">
-                        🚚 500₺ üzeri kargo bedava • 🔒 Güvenli ödeme • ↩️ Kolay iade
+        <>
+            <div className="bg-indigo-900 text-white">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
+                    <p className="flex items-center gap-2 text-xs font-medium sm:text-sm">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-700 animate-pulse">
+                            <Zap className="h-3 w-3 text-yellow-300" />
+                        </span>
+                        <span>Sezon ortası indirimleri başladı!</span>
                     </p>
-                    <p className="text-xs text-white/90">Destek: 09:00–18:00</p>
                 </div>
             </div>
 
-            {/* Main header */}
-            <div className="container-page flex items-center justify-between py-4">
-                <Link href="/" className="text-lg font-extrabold tracking-tight">
-                    <span className="text-orange-600">Shop</span>
-                    <span className="text-slate-900">Next</span>
-                </Link>
-
-                <nav className="flex items-center gap-2">
-                    <Link
-                        href="/"
-                        className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                    >
-                        Home
-                    </Link>
-
-                    <Link
-                        href="/cart"
-                        className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                    >
-                        Cart{" "}
-                        <span className="ml-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
-                            {total}
-                        </span>
-                    </Link>
-
-                    {isLoggedIn ? (
-                        <>
-                            <Link
-                                href="/admin/products"
-                                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                            >
-                                Admin
+            <header
+                className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled
+                    ? "border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm py-2"
+                    : "border-b border-transparent bg-white py-4"
+                    }`}
+            >
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <Link href="/" className="flex items-center gap-2 group">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-transform group-hover:scale-110">
+                                    <Zap className="h-5 w-5 fill-current" />
+                                </div>
+                                <span className="text-xl font-bold tracking-tight text-gray-900">
+                                    Tech<span className="text-indigo-600">Store</span>
+                                </span>
                             </Link>
 
-                            <button
-                                onClick={logout}
-                                className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                            >
-                                Logout{user?.email ? ` • ${user.email}` : ""}
-                            </button>
-                        </>
-                    ) : (
-                        <>
+                            {isAdmin && (
+                                <Link
+                                    href="/admin"
+                                    className="hidden sm:flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/20 hover:bg-indigo-100 transition-colors"
+                                >
+                                    <LayoutDashboard className="h-3.5 w-3.5" />
+                                    Yönetim Paneli
+                                </Link>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-4">
                             <Link
-                                href="/login"
-                                className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                                href="/cart"
+                                className="group relative rounded-full p-2 text-gray-600 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
                             >
-                                Login
+                                <ShoppingBag className="h-6 w-6" />
+                                {totalQty > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-white">
+                                        {totalQty}
+                                    </span>
+                                )}
                             </Link>
-                            <Link
-                                href="/register"
-                                className="rounded-xl border border-black/10 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-                            >
-                                Register
-                            </Link>
-                        </>
-                    )}
-                </nav>
-            </div>
-        </header>
+
+                            <div className="h-6 w-px bg-gray-200"></div>
+
+                            {/* Auth durumu */}
+                            <div className="flex items-center gap-3">
+                                {user ? (
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right hidden sm:block">
+                                            <p className="text-sm font-medium text-gray-900 leading-none">
+                                                {user.displayName || user.email?.split("@")[0]}
+                                            </p>
+                                            <p className="text-[10px] text-gray-500 mt-1">
+                                                {isAdmin ? "Yönetici 🛡️" : "Üye"}
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="group flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition-all hover:bg-red-50 hover:border-red-100 hover:text-red-600"
+                                            title="Çıkış Yap"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Link
+                                            href="/login"
+                                            className="text-sm font-medium text-gray-600 hover:text-indigo-600 px-2"
+                                        >
+                                            Giriş
+                                        </Link>
+                                        <Link
+                                            href="/register"
+                                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
+                                        >
+                                            Kayıt Ol
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+        </>
     );
 }

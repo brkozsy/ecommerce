@@ -26,7 +26,7 @@ export const useCartStore = create<CartState>()(
         (set, get) => ({
             items: [],
 
-            // ✅ aynı ürün varsa qty +1
+
             add: (p) =>
                 set((state) => {
                     const idx = state.items.findIndex((x) => x.id === p.id);
