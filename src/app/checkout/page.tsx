@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, type User } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
+import type { User } from "firebase/auth";
 
 import Container from "@/components/Container";
 import Card from "@/components/ui/Card";
@@ -34,7 +35,6 @@ async function waitForUser(auth: ReturnType<typeof getAuth>) {
 export default function CheckoutPage() {
     const router = useRouter();
 
-    // ✅ Cart store (sende isimler farklıysa burayı uyarlarsın)
     const cartItems = useCartStore((s: any) => s.items ?? s.cart ?? []);
     const clearCart = useCartStore((s: any) => s.clear ?? s.clearCart ?? (() => { }));
 
@@ -73,7 +73,6 @@ export default function CheckoutPage() {
 
             setBusy(true);
 
-            const auth = getAuth();
             const user = await waitForUser(auth);
 
             if (!user) {
@@ -108,7 +107,7 @@ export default function CheckoutPage() {
             const res = await fetch("/api/orders", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`, // ✅ EN ÖNEMLİ SATIR
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(payload),
@@ -119,14 +118,12 @@ export default function CheckoutPage() {
             try {
                 json = JSON.parse(text);
             } catch {
-                // JSON değilse body text olarak kalsın
             }
 
             if (!res.ok || !json?.ok) {
                 throw new Error(json?.error ?? text ?? "Sipariş oluşturulamadı.");
             }
 
-            // ✅ sipariş oluştu
             try {
                 clearCart();
             } catch { }
@@ -225,7 +222,6 @@ export default function CheckoutPage() {
                         </div>
                     </Card>
 
-                    {/* Sağ: Özet */}
                     <Card className="p-6">
                         <h2 className="text-lg font-semibold text-white">Özet</h2>
                         <div className="mt-4 space-y-2">

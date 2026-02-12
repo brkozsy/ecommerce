@@ -1,57 +1,84 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase/client";
 import { signOut } from "firebase/auth";
 
-import Container from "@/components/Container";
-import Button from "@/components/ui/Button";
-import { auth } from "@/lib/firebase/client";
-import { useAuthStore } from "@/store/authStore";
-import { useCartStore } from "@/store/cartStore";
-
 export default function Header() {
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
 
-    const user = useAuthStore((s) => s.user);
-    const loading = useAuthStore((s) => s.loading);
-    const totalQty = useCartStore((s) => s.totalQty());
+    useEffect(() => {
+        const unsub = auth.onAuthStateChanged((user) => {
+            if (!user) {
+                setUserEmail(null);
+                setIsAdmin(false);
+                return;
+            }
 
-    const safeQty = mounted ? totalQty : 0;
-    const showAuth = mounted && !loading;
+            setUserEmail(user.email);
+
+            const adminEmails =
+                process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(",") || [];
+
+            setIsAdmin(adminEmails.includes(user.email || ""));
+        });
+
+        return () => unsub();
+    }, []);
+
+    async function handleLogout() {
+        await signOut(auth);
+    }
 
     return (
         <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-            <Container className="flex h-16 items-center justify-between">
-                <Link href="/" className="text-lg font-semibold tracking-tight text-white">
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex h-16 items-center justify-between">
+                {/* Logo */}
+                <Link
+                    href="/"
+                    className="text-lg font-semibold tracking-tight text-white"
+                >
                     E-commerce
                 </Link>
 
-                <div className="flex items-center gap-2">
-                    <Link href="/cart" className="relative">
-                        <Button variant="secondary" size="sm">Cart</Button>
+                {/* Right Side */}
+                <div className="flex items-center gap-3">
 
-                        {safeQty > 0 && (
-                            <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-emerald-500 px-1 text-xs font-semibold text-black">
-                                {safeQty}
-                            </span>
-                        )}
+                    {/* Admin Butonu */}
+                    {isAdmin && (
+                        <Link href="/admin">
+                            <button className="rounded-xl bg-red-500 px-3 py-1.5 text-sm text-white hover:bg-red-600 transition">
+                                Admin Panel
+                            </button>
+                        </Link>
+                    )}
+
+                    {/* Cart */}
+                    <Link href="/cart">
+                        <button className="rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition">
+                            Cart
+                        </button>
                     </Link>
 
-                    {showAuth && !user ? (
+                    {/* Login / Logout */}
+                    {!userEmail ? (
                         <Link href="/login">
-                            <Button variant="ghost" size="sm">Login</Button>
+                            <button className="rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition">
+                                Login
+                            </button>
                         </Link>
-                    ) : null}
-
-                    {showAuth && user ? (
-                        <Button variant="ghost" size="sm" onClick={() => signOut(auth)}>
+                    ) : (
+                        <button
+                            onClick={handleLogout}
+                            className="rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20 transition"
+                        >
                             Logout
-                        </Button>
-                    ) : null}
+                        </button>
+                    )}
                 </div>
-            </Container>
+            </div>
         </header>
     );
 }
