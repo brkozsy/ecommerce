@@ -60,7 +60,7 @@ export default function ProductList({ items }: { items: Product[] }) {
                                 </span>
 
                                 <span className="text-xs text-zinc-500 group-hover:text-zinc-700">
-                                    View details →
+                                    Detay →
                                 </span>
                             </div>
                         </div>

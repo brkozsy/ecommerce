@@ -10,6 +10,7 @@ export type CartItem = {
     qty: number;
 };
 
+
 type CartState = {
     items: CartItem[];
     add: (p: Product) => void;
