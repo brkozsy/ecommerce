@@ -22,12 +22,12 @@ export default function ProductList({ items }: { items: Product[] }) {
                         href={`/products/${p.id}`}
                         className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
-                        <div className="h-44 w-full bg-zinc-100">
+                        <div className="h-120 w-full bg-zinc-100">
                             {img ? (
                                 <img
                                     src={img}
                                     alt={p.title}
-                                    className="h-44 w-full object-cover"
+                                    className="h-120 w-full object-cover"
                                     loading="lazy"
                                 />
                             ) : (

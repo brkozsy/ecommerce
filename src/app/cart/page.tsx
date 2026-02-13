@@ -14,7 +14,6 @@ import {
     LogIn
 } from "lucide-react";
 
-// Para birimi formatlayıcı
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('tr-TR', {
         style: 'currency',
@@ -25,23 +24,19 @@ const formatPrice = (price: number) => {
 export default function CartPage() {
     const router = useRouter();
 
-    // Store verileri
     const items = useCartStore((s: any) => s.items ?? []);
     const removeItem = useCartStore((s: any) => s.removeItem ?? (() => { }));
     const updateQty = useCartStore((s: any) => s.updateQty ?? (() => { }));
 
-    // ✅ Kullanıcı durumunu çekiyoruz
     const user = useAuthStore((s: any) => s.user);
 
     const total = items.reduce((sum: number, i: any) => sum + Number(i.price) * Number(i.qty ?? 1), 0);
 
-    // ✅ Checkout Butonu Fonksiyonu
     const handleCheckout = () => {
         if (user) {
-            // Kullanıcı giriş yapmışsa direkt checkout'a git
             router.push("/checkout");
         } else {
-            // Giriş yapmamışsa Login'e git ama işlem bitince checkout'a geri dön (next parametresi)
+
             router.push("/login?next=/checkout");
         }
     };
@@ -50,7 +45,6 @@ export default function CartPage() {
         <div className="min-h-screen bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-7xl">
 
-                {/* Başlık */}
                 <div className="mb-8 flex items-center justify-between">
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900">Alışveriş Sepeti</h1>
                     <span className="text-sm font-medium text-gray-500">
@@ -59,7 +53,6 @@ export default function CartPage() {
                 </div>
 
                 {items.length === 0 ? (
-                    /* BOŞ SEPET GÖRÜNÜMÜ */
                     <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-dashed border-gray-300 bg-white p-12 text-center shadow-sm">
                         <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
                             <ShoppingBag className="h-10 w-10" />
@@ -77,7 +70,6 @@ export default function CartPage() {
                         </button>
                     </div>
                 ) : (
-                    /* DOLU SEPET GRID YAPISI */
                     <div className="grid gap-8 lg:grid-cols-12">
 
                         {/* SOL KOLON: Ürün Listesi */}
@@ -92,7 +84,6 @@ export default function CartPage() {
                                             key={item.id}
                                             className="group flex flex-col gap-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md sm:flex-row sm:items-center"
                                         >
-                                            {/* Ürün Resmi */}
                                             <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
                                                 {item.image ? (
                                                     <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
@@ -103,7 +94,6 @@ export default function CartPage() {
                                                 )}
                                             </div>
 
-                                            {/* Ürün Bilgileri */}
                                             <div className="flex flex-1 flex-col justify-between sm:flex-row sm:items-center">
                                                 <div className="flex-1 pr-4">
                                                     <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
@@ -112,7 +102,6 @@ export default function CartPage() {
                                                     <p className="mt-1 text-sm text-gray-500">Birim Fiyat: {formatPrice(price)}</p>
                                                 </div>
 
-                                                {/* Miktar ve Silme */}
                                                 <div className="mt-4 flex items-center justify-between gap-6 sm:mt-0">
 
                                                     <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50">
@@ -151,7 +140,6 @@ export default function CartPage() {
                             </div>
                         </div>
 
-                        {/* SAĞ KOLON: Özet Paneli */}
                         <div className="lg:col-span-4">
                             <div className="sticky top-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg shadow-gray-200/50">
                                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
@@ -175,7 +163,6 @@ export default function CartPage() {
                                         <span className="text-2xl font-bold text-indigo-600">{formatPrice(total)}</span>
                                     </div>
 
-                                    {/* ✅ GÜNCELLENMİŞ BUTON */}
                                     <button
                                         onClick={handleCheckout}
                                         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-xl hover:-translate-y-0.5"

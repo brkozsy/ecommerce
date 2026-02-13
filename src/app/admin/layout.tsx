@@ -6,7 +6,6 @@ import { Loader2, ShieldAlert, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// 👇 ADMIN MAILLERINI BURAYA YAZ
 const ADMIN_EMAILS = ["admin@techstore.com", "burakozsoy@gmail.com", "seninmailin@hotmail.com"];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -15,13 +14,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
-        // Auth yüklenmesi bitince kontrolü bitir
         if (!loading) {
             setIsChecking(false);
         }
     }, [loading]);
 
-    // 1. Yükleniyor Ekranı
     if (loading || isChecking) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-gray-50">
@@ -32,7 +29,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
 
-    // 2. Yetkisiz Giriş Ekranı
     if (!isAdmin) {
         return (
             <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50 px-4 text-center">
@@ -57,7 +53,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    // 3. Admin Paneli İçeriği
     return (
         <div className="min-h-screen bg-gray-50 pb-10">
             <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
