@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 function getIdFromUrl(req: Request) {
     const url = new URL(req.url);

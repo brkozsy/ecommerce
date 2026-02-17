@@ -10,7 +10,6 @@ import {
     CreditCard,
     Calendar,
     Printer,
-    ArrowRight,
     User,
     Phone,
     Loader2,
@@ -44,7 +43,6 @@ type OrderDTO = {
     };
 };
 
-// Yardımcı Fonksiyonlar
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('tr-TR', {
         style: 'currency',
@@ -162,7 +160,6 @@ export default function OrderPage() {
         return items.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
     }, [order?.total, items]);
 
-    // Loading State
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -174,7 +171,6 @@ export default function OrderPage() {
         );
     }
 
-    // Error State
     if (error) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -207,7 +203,6 @@ export default function OrderPage() {
         <div className="min-h-screen bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-5xl">
 
-                {/* Header Bölümü */}
                 <div className="mb-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -239,10 +234,8 @@ export default function OrderPage() {
 
                 <div className="grid gap-8 lg:grid-cols-3">
 
-                    {/* SOL KOLON: Ürün Detayları */}
                     <div className="space-y-6 lg:col-span-2">
 
-                        {/* Ürün Listesi Kartı */}
                         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                             <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4 flex justify-between items-center">
                                 <h2 className="font-semibold text-gray-900">Sipariş Detayı</h2>
@@ -272,7 +265,6 @@ export default function OrderPage() {
                                 ))}
                             </div>
 
-                            {/* Toplam Alanı */}
                             <div className="border-t border-gray-100 bg-gray-50/50 p-6">
                                 <div className="flex flex-col gap-2">
                                     <div className="flex justify-between text-sm text-gray-600">
@@ -293,10 +285,8 @@ export default function OrderPage() {
                         </div>
                     </div>
 
-                    {/* SAĞ KOLON: Bilgi Kartları */}
                     <div className="space-y-6">
 
-                        {/* Durum Kartı */}
                         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Sipariş Durumu</h3>
 
@@ -322,7 +312,6 @@ export default function OrderPage() {
                             </div>
                         </div>
 
-                        {/* Müşteri Bilgileri */}
                         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Müşteri Bilgileri</h3>
 
@@ -353,7 +342,6 @@ export default function OrderPage() {
                             </div>
                         </div>
 
-                        {/* Ödeme Yöntemi */}
                         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Ödeme Yöntemi</h3>
                             <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">

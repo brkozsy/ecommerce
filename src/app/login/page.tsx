@@ -17,7 +17,7 @@ import {
     ArrowRight,
     AlertCircle,
     CheckCircle2,
-    Github
+
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -30,7 +30,6 @@ export default function LoginPage() {
     const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // Email/Password Giriş
     async function loginEmail(e: React.FormEvent) {
         e.preventDefault();
         if (loading) return;
@@ -42,7 +41,6 @@ export default function LoginPage() {
             await signInWithEmailAndPassword(auth, email, pass);
             setMsg({ type: 'success', text: "Giriş başarılı! Yönlendiriliyorsunuz..." });
 
-            // State oturması için kısa bekleme
             setTimeout(() => router.replace(next), 1000);
         } catch (err: any) {
             let errorMessage = "Giriş yapılamadı.";
@@ -55,7 +53,6 @@ export default function LoginPage() {
         }
     }
 
-    // Google Giriş
     async function loginGoogle() {
         if (loading) return;
 
@@ -77,7 +74,6 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-gray-50/50 px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8">
 
-                {/* Header / Logo */}
                 <div className="text-center">
                     <Link href="/" className="inline-flex items-center gap-2 group">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-transform group-hover:scale-110">
@@ -95,14 +91,12 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* Form Container */}
                 <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/50">
 
-                    {/* Mesaj Alanı */}
                     {msg && (
                         <div className={`mb-6 flex items-center gap-3 rounded-xl p-4 text-sm font-medium ${msg.type === 'success'
-                                ? 'bg-green-50 text-green-700 border border-green-100'
-                                : 'bg-red-50 text-red-700 border border-red-100'
+                            ? 'bg-green-50 text-green-700 border border-green-100'
+                            : 'bg-red-50 text-red-700 border border-red-100'
                             }`}>
                             {msg.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                             {msg.text}
@@ -111,7 +105,6 @@ export default function LoginPage() {
 
                     <div className="space-y-6">
 
-                        {/* Google Button */}
                         <button
                             onClick={loginGoogle}
                             disabled={loading}
@@ -139,7 +132,6 @@ export default function LoginPage() {
                             <span>Google ile Devam Et</span>
                         </button>
 
-                        {/* Divider */}
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-gray-200" />
@@ -149,7 +141,6 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        {/* Form */}
                         <form onSubmit={loginEmail} className="space-y-4">
                             <div>
                                 <label className="sr-only">Email</label>
@@ -218,7 +209,6 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Footer Link */}
                 <p className="text-center text-sm text-gray-600">
                     Henüz hesabınız yok mu?{" "}
                     <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline">

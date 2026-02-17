@@ -20,11 +20,9 @@ export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mounted, setMounted] = useState(false);
 
-    // Store verileri
     const totalQty = useCartStore((s: any) => (s.totalQty ? s.totalQty() : 0));
     const user = useAuthStore((s: any) => s.user);
 
-    // ✅ Admin kontrolü (doğru)
     const isAdmin =
         !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
 
@@ -47,10 +45,10 @@ export default function Header() {
     return (
         <>
             <div className="bg-indigo-900 text-white">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
                     <p className="flex items-center gap-2 text-xs font-medium sm:text-sm">
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-700 animate-pulse">
-                            <Zap className="h-3 w-3 text-yellow-300" />
+                            <Zap className="h-3 w-3 text-whites" />
                         </span>
                         <span>Sezon ortası indirimleri başladı!</span>
                     </p>
@@ -63,7 +61,8 @@ export default function Header() {
                     : "border-b border-transparent bg-white py-4"
                     }`}
             >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
+
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6">
                             <Link href="/" className="flex items-center gap-2 group">
@@ -101,7 +100,6 @@ export default function Header() {
 
                             <div className="h-6 w-px bg-gray-200"></div>
 
-                            {/* Auth durumu */}
                             <div className="flex items-center gap-3">
                                 {user ? (
                                     <div className="flex items-center gap-3">
@@ -132,7 +130,7 @@ export default function Header() {
                                         </Link>
                                         <Link
                                             href="/register"
-                                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow-md hover:-translate-y-0.5"
+                                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
                                         >
                                             Kayıt Ol
                                         </Link>

@@ -1,100 +1,91 @@
 "use client";
 
-import useSWR from "swr";
-import { auth } from "@/lib/firebase/client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { auth } from "@/lib/firebase/client";
+import { Loader2 } from "lucide-react";
 
-async function authedJson(url: string) {
-    const u = auth.currentUser;
-    if (!u) throw new Error("LOGIN_REQUIRED");
-
-    const token = await u.getIdToken();
-    const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const text = await res.text().catch(() => "");
-
-    // ✅ Backend JSON döndürüyorsa yakalayalım
-    if (!res.ok) {
-        try {
-            const j = text ? JSON.parse(text) : null;
-            const err = j?.error || j?.message || "";
-            // adminGuard "FORBIDDEN" / "UNAUTHENTICATED" döndürüyorsa
-            if (err) throw new Error(err);
-        } catch {
-            // text JSON değilse
-        }
-
-        // ✅ status'a göre anlamlı error
-        if (res.status === 401) throw new Error("UNAUTHENTICATED");
-        if (res.status === 403) throw new Error("FORBIDDEN");
-
-        throw new Error(text || `Request failed (${res.status})`);
-    }
-
-    return text ? JSON.parse(text) : null;
-}
-
-export default function AdminOrdersPage() {
-    const [email, setEmail] = useState<string>("(loading...)");
+export default function OrdersPage() {
+    const [loading, setLoading] = useState(true);
+    const [orders, setOrders] = useState<any[]>([]);
 
     useEffect(() => {
-        // auth state geldikçe email'i güncelle
-        const unsub = auth.onAuthStateChanged((u) => {
-            setEmail(u?.email || "(login değil)");
-        });
-        return () => unsub();
+        (async () => {
+            try {
+                setLoading(true);
+
+                const user = auth.currentUser;
+                if (!user) {
+                    setOrders([]);
+                    return;
+                }
+
+                const token = await user.getIdToken(true);
+                const res = await fetch("/api/orders", {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: "no-store",
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data?.ok) {
+                    setOrders([]);
+                    return;
+                }
+
+                setOrders(data.items ?? []);
+            } finally {
+                setLoading(false);
+            }
+        })();
     }, []);
 
-    const { data, error, isLoading, mutate } = useSWR("/api/admin/orders", authedJson);
-
-    if (isLoading) return <div>Yükleniyor...</div>;
-
-    if (error) {
-        const msg = String((error as any)?.message || error);
-
-        return (
-            <div className="space-y-2">
-                <p className="text-sm opacity-80">
-                    Login email: <b>{email}</b>
-                </p>
-
-                {msg.includes("LOGIN_REQUIRED") || msg.includes("UNAUTHENTICATED") ? (
-                    <div>Admin için giriş yapmalısın.</div>
-                ) : msg.includes("FORBIDDEN") ? (
-                    <div>
-                        Yetkin yok (admin değilsin). <br />
-                        <span className="text-xs opacity-70">
-                            Çözüm: .env.local içindeki ADMIN_EMAILS ile yukarıdaki login email birebir aynı olmalı (tırnaksız) ve
-                            server restart edilmeli.
-                        </span>
-                    </div>
-                ) : (
-                    <div className="text-red-600">Hata: {msg}</div>
-                )}
-            </div>
-        );
-    }
-
-    const items = data?.items || [];
-
     return (
-        <div className="space-y-4">
-            <p className="text-sm opacity-80">
-                Login email: <b>{email}</b>
-            </p>
+        <main className="min-h-screen bg-gray-50/50">
+            <div className="mx-auto w-full max-w-screen-2xl px-4 py-10 sm:px-6 lg:px-8">
+                <div className="flex items-end justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Siparişlerim</h1>
+                        <p className="mt-1 text-sm text-gray-500">Tüm siparişlerin burada listelenir.</p>
+                    </div>
+                    <Link
+                        href="/"
+                        className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-200 hover:bg-gray-50"
+                    >
+                        Alışverişe Dön
+                    </Link>
+                </div>
 
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Orders</h2>
-                <button className="rounded-lg border px-3 py-1 text-sm" onClick={() => mutate()}>
-                    Yenile
-                </button>
+                <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    {loading ? (
+                        <div className="flex h-40 items-center justify-center">
+                            <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
+                        </div>
+                    ) : orders.length === 0 ? (
+                        <div className="py-10 text-center text-gray-600">Henüz sipariş yok.</div>
+                    ) : (
+                        <div className="space-y-3">
+                            {orders.map((o) => (
+                                <Link
+                                    key={o.id}
+                                    href={`/orders/${o.id}`}
+                                    className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-5 py-4 hover:bg-gray-50"
+                                >
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900">Sipariş #{String(o.id).slice(0, 8).toUpperCase()}</p>
+                                        <p className="mt-1 text-xs text-gray-500">{o.createdAt ? new Date(o.createdAt).toLocaleString("tr-TR") : ""}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-extrabold text-indigo-600">
+                                            ₺{Number(o?.totals?.total ?? 0).toLocaleString("tr-TR")}
+                                        </p>
+                                        <p className="mt-1 text-xs font-semibold text-gray-500">{o.status ?? "pending"}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-
-            <div className="rounded-xl border p-4">
-                <pre className="text-xs">{JSON.stringify(items, null, 2)}</pre>
-            </div>
-        </div>
+        </main>
     );
 }

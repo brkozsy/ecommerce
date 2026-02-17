@@ -15,7 +15,7 @@ export default function ProductList({ items }: { items: Product[] }) {
     return (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((p) => {
-                const img = (p.imageUrl || "").trim(); // ✅ sadece imageUrl
+                const img = (p.imageUrl || "").trim();
                 return (
                     <Link
                         key={p.id}

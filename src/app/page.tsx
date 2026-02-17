@@ -6,7 +6,6 @@ import {
   ShoppingBag,
   Truck,
   ShieldCheck,
-  ArrowRight,
   Zap,
   Tag
 } from "lucide-react";
@@ -41,31 +40,26 @@ export default async function HomePage({
   const category = params.category;
   const sort = params.sort;
 
-  // --- AKILLI FİLTRELEME MANTIĞI ---
   let filteredItems = items.filter((item) => {
-    // "Hepsi" seçiliyse veya filtre yoksa tüm ürünleri göster
     if (!category || category === "Hepsi") return true;
 
     const selectedCat = category.toLowerCase().trim();
     const itemCat = (item.category || "").toLowerCase().trim();
     const itemTitle = (item.title || "").toLowerCase().trim();
 
-    // 1. Eğer üründe kategori alanı varsa ve eşleşiyorsa
-    if (itemCat === selectedCat) return true;
 
-    // 2. Eğer kategori alanı yoksa, başlıkta (title) arama yap
-    // Örn: Başlıkta "Samsung Galaxy Z Flip7" geçiyorsa ve seçilen "Telefon" ise eşleşir.
-    // (Burada basit bir kelime kontrolü yapıyoruz)
-    if (selectedCat === "telefon" && (itemTitle.includes("telefon") || itemTitle.includes("galaxy") || itemTitle.includes("iphone"))) return true;
+
+    if (selectedCat === "telefon" && (itemTitle.includes("telefon") || itemTitle.includes("iphone"))) return true;
     if (selectedCat === "bilgisayar" && (itemTitle.includes("laptop") || itemTitle.includes("pc") || itemTitle.includes("bilgisayar"))) return true;
     if (selectedCat === "oyun konsolu" && (itemTitle.includes("playstation") || itemTitle.includes("xbox") || itemTitle.includes("konsol") || itemTitle.includes("ps5"))) return true;
     if (selectedCat === "tablet" && itemTitle.includes("tablet")) return true;
     if (selectedCat === "şarj aleti" && itemTitle.includes("şarj")) return true;
+    if (selectedCat === "saat" && itemTitle.includes("saat")) return true;
+
 
     return false;
   });
 
-  // --- SIRALAMA MANTIĞI ---
   if (sort === "price-asc") {
     filteredItems = [...filteredItems].sort((a, b) => a.price - b.price);
   } else if (sort === "price-desc") {
@@ -74,9 +68,8 @@ export default async function HomePage({
 
   return (
     <main className="min-h-screen bg-gray-50/50">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
 
-        {/* Hero Section */}
         <section className="relative mb-12 overflow-hidden rounded-xl bg-indigo-600 text-white shadow-xl shadow-indigo-200">
           <div className="relative z-10 grid items-center gap-8 px-6 py-12 lg:grid-cols-2 lg:px-12 lg:py-16">
             <div className="space-y-6">
@@ -95,7 +88,6 @@ export default async function HomePage({
           </div>
         </section>
 
-        {/* Özellikler */}
         <section className="mb-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: Truck, title: "Hızlı Teslimat", desc: "Aynı gün kargo imkanı" },
@@ -115,7 +107,6 @@ export default async function HomePage({
           ))}
         </section>
 
-        {/* Ürün Listeleme Alanı */}
         <div className="mb-8 border-b border-gray-200 pb-4">
           <div className="mb-6">
             <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
@@ -126,7 +117,6 @@ export default async function HomePage({
             </p>
           </div>
 
-          {/* Filtreleme Barı */}
           <FilterBar />
 
           <div className="mt-4 flex items-center justify-between">
@@ -136,7 +126,6 @@ export default async function HomePage({
           </div>
         </div>
 
-        {/* Sonuçlar */}
         {filteredItems.length > 0 ? (
           <ProductList items={filteredItems} />
         ) : (

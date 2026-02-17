@@ -3,7 +3,7 @@ import { adminDb } from "@/lib/server/firebase/admin";
 import type { Timestamp } from "firebase-admin/firestore";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 function toNumber(v: any, fallback = 0) {
     if (v === undefined || v === null || v === "") return fallback;

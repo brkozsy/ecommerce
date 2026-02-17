@@ -9,7 +9,6 @@ import {
     Trash2,
     ShoppingBag,
     ArrowRight,
-    ShieldCheck,
     ArrowLeft,
     LogIn
 } from "lucide-react";

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-const CATEGORIES = ["Hepsi", "Bilgisayar", "Tablet", "Telefon", "Oyun Konsolu", "Şarj Aleti"];
+const CATEGORIES = ["Hepsi", "Bilgisayar", "Tablet", "Telefon", "Oyun Konsolu", "Şarj Aleti", "Saat"];
 
 export default function FilterBar() {
     const router = useRouter();
@@ -23,15 +23,14 @@ export default function FilterBar() {
 
     return (
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* Kategoriler */}
             <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((cat) => (
                     <button
                         key={cat}
                         onClick={() => updateFilters("category", cat)}
                         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${currentCategory === cat
-                                ? "bg-indigo-600 text-white shadow-md"
-                                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                            ? "bg-indigo-600 text-white shadow-md"
+                            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                             }`}
                     >
                         {cat}
@@ -39,7 +38,6 @@ export default function FilterBar() {
                 ))}
             </div>
 
-            {/* Sıralama */}
             <select
                 value={currentSort}
                 onChange={(e) => updateFilters("sort", e.target.value)}
