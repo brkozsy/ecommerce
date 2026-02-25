@@ -125,7 +125,6 @@ export default function CartPage() {
                             </div>
                         </div>
 
-                        {/* Özet Paneli */}
                         <div className="lg:col-span-4">
                             <div className="sticky top-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg shadow-gray-200/50">
                                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">

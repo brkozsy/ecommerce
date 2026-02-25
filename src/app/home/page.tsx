@@ -10,6 +10,8 @@ import {
   Tag
 } from "lucide-react";
 
+
+
 async function getBaseUrl() {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
@@ -44,7 +46,6 @@ export default async function HomePage({
     if (!category || category === "Hepsi") return true;
 
     const selectedCat = category.toLowerCase().trim();
-    const itemCat = (item.category || "").toLowerCase().trim();
     const itemTitle = (item.title || "").toLowerCase().trim();
 
 
@@ -55,7 +56,6 @@ export default async function HomePage({
     if (selectedCat === "tablet" && itemTitle.includes("tablet")) return true;
     if (selectedCat === "şarj aleti" && itemTitle.includes("şarj")) return true;
     if (selectedCat === "saat" && itemTitle.includes("saat")) return true;
-
 
     return false;
   });
@@ -137,3 +137,4 @@ export default async function HomePage({
     </main>
   );
 }
+

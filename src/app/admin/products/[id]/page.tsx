@@ -29,10 +29,7 @@ export default function EditProductPage() {
                 if (!u) throw new Error("LOGIN_REQUIRED");
                 const token = await u.getIdToken();
 
-                // Basit yöntem: admin listeden tek tek bulmak yerine
-                // şimdilik public product endpoint'in varsa onu kullanabiliriz.
-                // Yoksa admin "GET by id" endpoint'i ekleriz.
-                // Şimdilik hızlı: admin products listesini çekip içinden bul:
+
                 const res = await fetch("/api/admin/products", {
                     headers: { Authorization: `Bearer ${token}` },
                 });

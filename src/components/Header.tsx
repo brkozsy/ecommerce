@@ -35,7 +35,7 @@ export default function Header() {
 
     const handleLogout = async () => {
         await signOut(auth);
-        router.push("/");
+        router.push("/login");
         router.refresh();
     };
 
@@ -65,7 +65,7 @@ export default function Header() {
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6">
-                            <Link href="/" className="flex items-center gap-2 group">
+                            <Link href="/home" className="flex items-center gap-2 group">
                                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-transform group-hover:scale-110">
                                     <Zap className="h-5 w-5 fill-current" />
                                 </div>

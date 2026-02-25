@@ -30,7 +30,7 @@ export default function FilterBar() {
                         onClick={() => updateFilters("category", cat)}
                         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${currentCategory === cat
                             ? "bg-indigo-600 text-white shadow-md"
-                            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                            : "bg-white text-gray-900 hover:bg-gray-100 border border-gray-200"
                             }`}
                     >
                         {cat}
@@ -43,7 +43,7 @@ export default function FilterBar() {
                 onChange={(e) => updateFilters("sort", e.target.value)}
                 className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 outline-none focus:ring-2 focus:ring-indigo-500"
             >
-                <option value="default">Sıralama Seçin</option>
+                <option value="default">Siralama Seçin</option>
                 <option value="price-asc">Fiyat: Düşükten Yükseğe</option>
                 <option value="price-desc">Fiyat: Yüksekten Düşüğe</option>
             </select>

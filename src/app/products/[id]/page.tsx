@@ -25,7 +25,6 @@ type ProductDTO = {
     description?: string | null;
 };
 
-// Yardımcılar
 function toNumber(v: any, fallback = 0) {
     if (v === undefined || v === null || v === "") return fallback;
     const n = typeof v === "string" ? Number(v) : v;
@@ -83,7 +82,6 @@ export default function ProductPage() {
         };
     }, [id]);
 
-    // --- Loading State ---
     if (loading) {
         return (
             <div className="flex min-h-[60vh] items-center justify-center">
@@ -95,7 +93,6 @@ export default function ProductPage() {
         );
     }
 
-    // --- Error State ---
     if (err) {
         return (
             <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -114,7 +111,6 @@ export default function ProductPage() {
         );
     }
 
-    // --- Not Found State ---
     if (!p) {
         return (
             <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -140,7 +136,6 @@ export default function ProductPage() {
         <div className="min-h-screen bg-gray-50/50 pb-12">
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
-                {/* Breadcrumbs */}
                 <nav className="mb-8 flex items-center gap-2 text-sm text-gray-500">
                     <Link href="/" className="flex items-center gap-1 hover:text-indigo-600 transition-colors">
                         <Home className="h-4 w-4" />
@@ -156,7 +151,6 @@ export default function ProductPage() {
 
                 <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
 
-                    {/* SOL: Ürün Görseli */}
                     <div className="group relative overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                         <div className="aspect-square w-full bg-gray-50/50 p-8 flex items-center justify-center">
                             {p.imageUrl ? (
@@ -175,10 +169,8 @@ export default function ProductPage() {
                         </div>
                     </div>
 
-                    {/* SAĞ: Ürün Detayları */}
                     <div className="flex flex-col">
 
-                        {/* Başlık ve Değerlendirme */}
                         <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                             {p.title}
                         </h1>
@@ -192,22 +184,20 @@ export default function ProductPage() {
                             <span className="text-sm text-gray-500">(4.9/5 - 128 Değerlendirme)</span>
                         </div>
 
-                        {/* Fiyat ve Stok */}
                         <div className="mt-6 flex items-center gap-4">
                             <p className="text-4xl font-bold text-indigo-600">
                                 {formatPrice(p.price)}
                             </p>
 
                             <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${inStock
-                                    ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
-                                    : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
+                                ? "bg-green-50 text-green-700 ring-1 ring-green-600/20"
+                                : "bg-red-50 text-red-700 ring-1 ring-red-600/20"
                                 }`}>
                                 <div className={`h-2 w-2 rounded-full ${inStock ? "bg-green-600" : "bg-red-600"}`}></div>
                                 {inStock ? `Stokta: ${stock} Adet` : "Stok Tükendi"}
                             </div>
                         </div>
 
-                        {/* Açıklama */}
                         <div className="mt-6">
                             <h3 className="sr-only">Açıklama</h3>
                             <div className="prose prose-sm text-gray-600">
@@ -217,7 +207,6 @@ export default function ProductPage() {
 
                         <div className="my-8 border-t border-gray-100"></div>
 
-                        {/* Aksiyon Alanı */}
                         <div className="space-y-6">
                             <AddToCartButton
                                 product={{
@@ -230,7 +219,6 @@ export default function ProductPage() {
                                 }}
                             />
 
-                            {/* Güven Rozetleri */}
                             <div className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-3">
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                     <Truck className="h-5 w-5 text-indigo-600" />

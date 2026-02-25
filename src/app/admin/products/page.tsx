@@ -43,7 +43,7 @@ export default function AdminProductsPage() {
             return alert(t || "Silme başarısız");
         }
 
-        mutate(); // refresh list
+        mutate();
     }
 
     if (isLoading) return <div>Yükleniyor...</div>;
