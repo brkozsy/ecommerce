@@ -1,76 +1,128 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useCartStore } from "@/store/cartStore";
-import type { Product } from "@/types/product";
+import useSWR, { mutate } from "swr";
+import useSWRMutation from "swr/mutation";
+import { auth } from "@/lib/firebase/client";
+import { cartAdd, getCart } from "@/lib/api/cart";
+import { Loader2, CheckCircle2, ShoppingCart } from "lucide-react";
 
 type ProductLike = {
     id: string;
     title: string;
     price: number;
-    stock: number;
-    imageUrl?: string;
-    description?: string;
+    stock?: number | string | null;
+    imageUrl?: string | null;
+    description?: string | null;
 };
 
-export default function AddToCartButton({ product }: { product: ProductLike }) {
-    const add = useCartStore((s) => s.add);
-    const items = useCartStore((s) => s.items);
+// Ürün sayfası artık miktar (quantity) prop'unu gönderiyor
+interface AddToCartButtonProps {
+    product: ProductLike;
+    quantity?: number; // Opsiyonel, varsayılan 1 olacak
+}
 
-    const stock = Number(product.stock ?? 0);
-    const canAdd = Number.isFinite(stock) && stock > 0;
+function toNumber(v: any, fallback = 0) {
+    if (v === undefined || v === null || v === "") return fallback;
+    const n = typeof v === "string" ? Number(v) : v;
+    return Number.isFinite(n) ? n : fallback;
+}
+
+async function tokenOrThrow() {
+    const u = auth.currentUser;
+    if (!u) throw new Error("Sepete eklemek için giriş yapmalısınız.");
+    return await u.getIdToken();
+}
+
+export default function AddToCartButton({ product, quantity = 1 }: AddToCartButtonProps) {
+    const stock = toNumber(product.stock, 0);
+    const canAdd = stock > 0;
+    const [added, setAdded] = useState(false);
+
+    const { data: cart } = useSWR(
+        auth.currentUser ? "cart" : null,
+        async () => {
+            const token = await tokenOrThrow();
+            return await getCart(token);
+        },
+        { revalidateOnFocus: false }
+    );
 
     const inCart = useMemo(() => {
+        const items = cart?.items ?? [];
         return items.some((x) => x.id === product.id);
-    }, [items, product.id]);
-
-    const [added, setAdded] = useState(false);
+    }, [cart?.items, product.id]);
 
     useEffect(() => {
         if (!added) return;
-        const t = window.setTimeout(() => setAdded(false), 1400);
+        const t = window.setTimeout(() => setAdded(false), 2000);
         return () => window.clearTimeout(t);
     }, [added]);
 
-    function onAdd() {
-        if (!canAdd) return;
+    // API'ye seçilen miktarı (quantity) gönderiyoruz
+    const { trigger, isMutating } = useSWRMutation(
+        "cart",
+        async () => {
+            const token = await tokenOrThrow();
+            // Sabit 1 yerine seçilen quantity değerini gönderiyoruz
+            await cartAdd(token, product.id, quantity);
+            return true;
+        },
+        {
+            onSuccess: async () => {
+                await mutate("cart");
+                setAdded(true);
+            },
+            onError: (err) => {
+                alert(err?.message || "Sepete eklenirken bir hata oluştu.");
+            }
+        }
+    );
 
-        const p: Product = {
-            id: product.id,
-            title: product.title,
-            price: product.price,
-            imageUrl: product.imageUrl || "",
-            description: product.description || "",
-            inStock: true,
-        };
-
-        add(p);
-        setAdded(true);
+    async function onAdd() {
+        if (!canAdd || isMutating) return;
+        await trigger();
     }
 
-    const label = !canAdd
-        ? "Stok yok"
-        : added
-            ? "Sepete eklendi ✓"
-            : inCart
-                ? "1 tane daha ekle"
-                : "Sepete Ekle";
+    // Durum mesajları
+    const getButtonContent = () => {
+        if (isMutating) return (
+            <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Ekleniyor...</span>
+            </div>
+        );
 
-    const base =
-        "w-full rounded-xl px-4 py-2 font-semibold shadow-sm transition-all duration-150";
-    const enabled = added
-        ? "bg-emerald-600 text-white"
-        : "bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.99]";
-    const disabled = "cursor-not-allowed bg-zinc-200 text-zinc-500";
+        if (!canAdd) return "Stokta Yok";
+
+        if (added) return (
+            <div className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                <span>{quantity} Adet Eklendi</span>
+            </div>
+        );
+
+        return (
+            <div className="flex items-center justify-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                <span>{inCart ? `${quantity} Adet Daha Ekle` : "Sepete Ekle"}</span>
+            </div>
+        );
+    };
 
     return (
         <button
             type="button"
             onClick={onAdd}
-            disabled={!canAdd || added}
-            className={base + " " + (canAdd ? enabled : disabled)}
+            disabled={!canAdd || isMutating}
+            className={`
+                w-full py-4 rounded-2xl font-bold text-lg transition-all duration-300 shadow-lg
+                ${!canAdd ? "bg-gray-200 text-gray-500 cursor-not-allowed shadow-none" :
+                    added ? "bg-emerald-600 text-white scale-[0.98] shadow-emerald-200" :
+                        "bg-orange-500 text-white hover:bg-orange-600 active:scale-[0.97] shadow-orange-200"}
+            `}
         >
-            {label}
+            {getButtonContent()}
         </button>
     );
 }

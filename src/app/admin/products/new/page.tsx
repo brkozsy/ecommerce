@@ -3,259 +3,269 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import useSWRMutation from "swr/mutation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { auth } from "@/lib/firebase/client";
+import { adminCreateProduct } from "@/lib/api/adminProducts";
+import { PRODUCT_CATEGORIES } from "@/lib/constants/categories";
 import {
     PackagePlus,
     Image as ImageIcon,
     Tag,
-    Box,
-    Type,
     FileText,
     Loader2,
     ArrowLeft,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Banknote,
+    Boxes,
+    Eye
 } from "lucide-react";
-import Link from "next/link";
 
-// Yup Doğrulama Şeması
-const productSchema = yup.object().shape({
-    title: yup
-        .string()
-        .required("Başlık alanı zorunludur")
-        .min(3, "Başlık en az 3 karakter olmalıdır"),
-    price: yup
-        .number()
-        .typeError("Geçerli bir sayı giriniz")
-        .required("Fiyat zorunludur")
-        .positive("Fiyat 0'dan büyük olmalıdır"),
-    stock: yup
-        .number()
-        .typeError("Geçerli bir sayı giriniz")
-        .required("Stok zorunludur")
-        .min(0, "Stok negatif olamaz"),
-    imageUrl: yup
-        .string()
-        .url("Geçerli bir URL giriniz")
-        .nullable()
-        .transform((value) => (value === "" ? null : value)),
-    description: yup
-        .string()
-        .required("Açıklama zorunludur")
-        .min(10, "Açıklama en az 10 karakter olmalıdır"),
+type FormData = {
+    title: string;
+    category: string;
+    price: number;
+    stock: number;
+    imageUrl?: string | null;
+    description?: string | null;
+    isActive: boolean;
+};
+
+const schema: yup.ObjectSchema<FormData> = yup.object({
+    title: yup.string().required("Başlık zorunlu").min(2, "En az 2 karakter olmalıdır"),
+    category: yup.string().required("Kategori seçimi zorunludur"),
+    price: yup.number().typeError("Geçerli bir fiyat giriniz").required("Fiyat zorunlu").min(0, "Fiyat 0'dan küçük olamaz"),
+    stock: yup.number().typeError("Geçerli bir stok giriniz").required("Stok zorunlu").min(0, "Stok 0'dan küçük olamaz"),
+    imageUrl: yup.string().nullable().optional().trim(),
+    description: yup.string().nullable().optional(),
     isActive: yup.boolean().default(true),
 });
 
-type ProductFormValues = yup.InferType<typeof productSchema>;
-
 export default function NewProductPage() {
     const router = useRouter();
-    const [status, setStatus] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     const {
         register,
         handleSubmit,
-        watch,
-        formState: { errors },
-    } = useForm<ProductFormValues>({
-        resolver: yupResolver(productSchema),
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>({
+        resolver: yupResolver(schema),
         defaultValues: {
-            isActive: true,
+            title: "",
+            category: PRODUCT_CATEGORIES[0],
             price: 0,
             stock: 0,
-            imageUrl: ""
-        }
+            imageUrl: "",
+            description: "",
+            isActive: true,
+        },
+        mode: "onTouched",
     });
 
-    const watchedImageUrl = watch("imageUrl");
-
-    async function onSubmit(data: ProductFormValues) {
-        setLoading(true);
-        setStatus(null);
-
-        try {
-            const u = auth.currentUser;
-            if (!u) throw new Error("Oturum açmanız gerekiyor.");
-            const token = await u.getIdToken();
-
-            const res = await fetch("/api/admin/products", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(data),
+    const { trigger: createProduct, isMutating } = useSWRMutation(
+        "admin-create-product",
+        async (_key, { arg }: { arg: FormData }) => {
+            await adminCreateProduct({
+                title: arg.title,
+                category: arg.category,
+                price: Number(arg.price),
+                stock: Number(arg.stock),
+                imageUrl: arg.imageUrl || "",
+                description: arg.description || "",
+                isActive: !!arg.isActive,
             });
+            return true;
+        }
+    );
 
-            if (!res.ok) throw new Error("Ürün oluşturulurken sunucu hatası oluştu.");
+    const busy = isSubmitting || isMutating;
 
-            setStatus({ type: 'success', text: "Ürün başarıyla oluşturuldu! Yönlendiriliyorsunuz..." });
+    const onSubmit = async (data: FormData) => {
+        setStatus(null);
+        try {
+            await createProduct(data);
+            setStatus({ type: "success", text: "Ürün başarıyla oluşturuldu! Yönlendiriliyorsunuz..." });
             setTimeout(() => router.replace("/admin/products"), 1500);
         } catch (e: any) {
-            setStatus({ type: 'error', text: e.message });
-        } finally {
-            setLoading(false);
+            setStatus({ type: "error", text: String(e?.message || e) });
         }
-    }
+    };
 
     return (
-        <div className="mx-auto max-w-4xl pb-20">
-            {/* Navigasyon & Başlık */}
-            <div className="mb-10">
-                <Link
-                    href="/admin/products"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors mb-4"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Ürün Listesine Geri Dön
-                </Link>
-                <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
-                        <PackagePlus className="h-6 w-6" />
-                    </div>
+        <main className="min-h-screen bg-[#F4F4F5] px-4 py-8 md:py-12">
+            <div className="mx-auto max-w-5xl">
+
+                <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Yeni Ürün Ekle</h1>
-                        <p className="text-gray-500">Envanterinize yeni bir teknolojik ürün ekleyin.</p>
+                        <button
+                            onClick={() => router.push("/admin/products")}
+                            className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-indigo-600 transition-colors"
+                        >
+                            <ArrowLeft className="h-4 w-4" /> Ürünlere Dön
+                        </button>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Yeni Ürün Ekle</h1>
+                        <p className="mt-1 text-sm text-gray-500">Kataloğunuza yeni bir ürün ekleyin ve detaylarını yapılandırın.</p>
                     </div>
+                    <button
+                        onClick={() => document.getElementById("submit-product")?.click()}
+                        disabled={busy}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 text-sm font-semibold text-white shadow-sm hover:bg-black transition-all disabled:opacity-60"
+                    >
+                        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
+                        {busy ? "Kaydediliyor..." : "Ürünü Kaydet"}
+                    </button>
                 </div>
-            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
+                {/* Status Banners */}
+                {status?.type === "success" && (
+                    <div className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                        <span className="text-sm font-semibold">{status.text}</span>
+                    </div>
+                )}
+                {status?.type === "error" && (
+                    <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm">
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                        <span className="text-sm font-semibold">{status.text}</span>
+                    </div>
+                )}
 
-                {/* Sol Taraf: Form Bilgileri */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm transition-shadow hover:shadow-md">
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-2 border-b border-gray-50 pb-4">
-                                <FileText className="h-5 w-5 text-indigo-500" />
-                                <h3 className="font-bold text-gray-800">Ürün Detayları</h3>
-                            </div>
+                <form onSubmit={handleSubmit(onSubmit)} className="lg:grid lg:grid-cols-12 lg:gap-8 items-start" noValidate>
 
-                            <div className="space-y-4">
+                    <div className="lg:col-span-8 space-y-8">
+
+                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-6">
+                                <FileText className="h-5 w-5 text-gray-400" /> Temel Bilgiler
+                            </h2>
+
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Ürün Başlığı</label>
-                                    <div className="relative group">
-                                        <Type className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                                        <input
-                                            {...register("title")}
-                                            className={`w-full rounded-2xl border ${errors.title ? 'border-red-400 bg-red-50/30' : 'border-gray-200 bg-gray-50/30'} py-3.5 pl-12 pr-4 text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none`}
-                                            placeholder="Örn: Kablosuz Oyuncu Mouse"
-                                        />
-                                    </div>
-                                    {errors.title && <p className="mt-2 text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> {errors.title.message}</p>}
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ürün Adı</label>
+                                    <input
+                                        {...register("title")}
+                                        disabled={busy}
+                                        placeholder="Örn: Apple iPhone 15 Pro Max 256GB"
+                                        className={`w-full rounded-xl border bg-gray-50/50 px-4 py-3 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${errors.title ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-indigo-500"}`}
+                                    />
+                                    {errors.title && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.title.message}</p>}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Açıklama</label>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Açıklama</label>
                                     <textarea
                                         {...register("description")}
-                                        rows={6}
-                                        className={`w-full rounded-2xl border ${errors.description ? 'border-red-400 bg-red-50/30' : 'border-gray-200 bg-gray-50/30'} p-4 text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none resize-none`}
-                                        placeholder="Ürünün teknik özelliklerini ve avantajlarını detaylandırın..."
+                                        disabled={busy}
+                                        rows={5}
+                                        placeholder="Ürünün özelliklerini, avantajlarını ve detaylarını buraya yazın..."
+                                        className={`w-full resize-none rounded-xl border bg-gray-50/50 px-4 py-3 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${errors.description ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-indigo-500"}`}
                                     />
-                                    {errors.description && <p className="mt-2 text-xs font-medium text-red-500 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> {errors.description.message}</p>}
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-6">
+                                <ImageIcon className="h-5 w-5 text-gray-400" /> Medya
+                            </h2>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Görsel URL (Bağlantı)</label>
+                                <input
+                                    {...register("imageUrl")}
+                                    disabled={busy}
+                                    placeholder="https://site.com/gorsel.jpg"
+                                    className={`w-full rounded-xl border bg-gray-50/50 px-4 py-3 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${errors.imageUrl ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-indigo-500"}`}
+                                />
+                                <p className="mt-2 text-xs text-gray-500">Ürünü temsil eden yüksek kaliteli bir görsel bağlantısı girin.</p>
                             </div>
                         </div>
                     </div>
 
-                    {status && (
-                        <div className={`flex items-center gap-3 rounded-2xl p-5 border ${status.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-700'
-                            } animate-in fade-in slide-in-from-top-4 duration-300`}>
-                            {status.type === 'success' ? <CheckCircle2 className="h-6 w-6" /> : <AlertCircle className="h-6 w-6" />}
-                            <span className="font-semibold">{status.text}</span>
-                        </div>
-                    )}
-                </div>
+                    <div className="lg:col-span-4 mt-8 lg:mt-0 space-y-8">
 
-                {/* Sağ Taraf: Fiyat, Stok ve Önizleme */}
-                <div className="space-y-6">
-                    <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <div className="space-y-5">
-                            <div className="flex items-center gap-2 border-b border-gray-50 pb-4">
-                                <Tag className="h-5 w-5 text-indigo-500" />
-                                <h3 className="font-bold text-gray-800">Fiyat & Stok</h3>
-                            </div>
+                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="text-base font-bold text-gray-900 mb-5">Satış & Envanter</h2>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Fiyat (₺)</label>
+                                    <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mb-1.5">
+                                        <Banknote className="h-4 w-4 text-gray-400" /> Fiyat (₺)
+                                    </label>
                                     <input
                                         type="number"
+                                        step="0.01"
                                         {...register("price")}
-                                        className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                                        disabled={busy}
+                                        placeholder="0.00"
+                                        className={`w-full rounded-xl border bg-gray-50/50 px-4 py-3 text-sm font-medium transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${errors.price ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-indigo-500"}`}
                                     />
-                                    {errors.price && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{errors.price.message}</p>}
+                                    {errors.price && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.price.message}</p>}
                                 </div>
+
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Stok</label>
+                                    <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mb-1.5">
+                                        <Boxes className="h-4 w-4 text-gray-400" /> Stok Adedi
+                                    </label>
                                     <input
                                         type="number"
                                         {...register("stock")}
-                                        className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                                        disabled={busy}
+                                        placeholder="0"
+                                        className={`w-full rounded-xl border bg-gray-50/50 px-4 py-3 text-sm font-medium transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${errors.stock ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-indigo-500"}`}
                                     />
-                                    {errors.stock && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{errors.stock.message}</p>}
+                                    {errors.stock && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.stock.message}</p>}
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="text-base font-bold text-gray-900 mb-5">Kategori</h2>
 
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Görsel URL</label>
-                                <input
-                                    {...register("imageUrl")}
-                                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                                    placeholder="https://images.com/..."
-                                />
-                            </div>
-
-                            {/* Önizleme Kartı */}
-                            <div className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50 transition-all hover:border-indigo-200">
-                                {watchedImageUrl ? (
-                                    <img
-                                        src={watchedImageUrl}
-                                        alt="Önizleme"
-                                        className="h-full w-full object-cover animate-in zoom-in-95 duration-500"
-                                        onError={(e) => (e.currentTarget.src = "")}
-                                    />
-                                ) : (
-                                    <div className="flex h-full flex-col items-center justify-center text-gray-300">
-                                        <ImageIcon className="h-10 w-10 opacity-20 mb-2" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest">Görsel Bekleniyor</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="pt-2">
-                                <label className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-colors">
-                                    <span className="text-sm font-bold text-gray-700">Satışa Hazır</span>
-                                    <input
-                                        type="checkbox"
-                                        {...register("isActive")}
-                                        className="h-5 w-5 rounded-lg border-gray-300 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer"
-                                    />
+                                <label className="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mb-1.5">
+                                    <Tag className="h-4 w-4 text-gray-400" />
                                 </label>
+                                <select
+                                    {...register("category")}
+                                    disabled={busy}
+                                    className={`w-full rounded-xl border bg-gray-50/50 px-4 py-3 text-sm transition-all focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${errors.category ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-indigo-500"}`}
+                                >
+                                    {PRODUCT_CATEGORIES.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                                {errors.category && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.category.message}</p>}
                             </div>
                         </div>
-                    </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-indigo-600 p-4 text-sm font-black text-white shadow-xl shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-70"
-                    >
-                        {loading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                            <>
-                                <span>Ürünü Kaydet</span>
-                                <PackagePlus className="h-5 w-5 transition-transform group-hover:rotate-12" />
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
-        </div>
+
+                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-5">
+                                <Eye className="h-5 w-5 text-gray-400" /> Görünürlük
+                            </h2>
+
+                            <label className="relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-100 bg-gray-50 p-4 hover:bg-gray-100/50 transition-colors">
+                                <div>
+                                    <span className="block text-sm font-bold text-gray-900">Ürün Aktif</span>
+                                    <span className="block text-xs text-gray-500 mt-0.5">Mağazada satışa açık olur.</span>
+                                </div>
+                                <div className="relative">
+
+                                    <input type="checkbox" {...register("isActive")} disabled={busy} className="peer sr-only" />
+                                    <div className="h-6 w-11 rounded-full bg-gray-300 transition-colors peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/30 peer-checked:bg-indigo-600 peer-disabled:opacity-50"></div>
+                                    <div className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-full peer-disabled:opacity-50 shadow-sm border border-gray-200"></div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <button type="submit" id="submit-product" className="hidden" />
+
+                    </div>
+                </form>
+            </div>
+        </main>
     );
 }

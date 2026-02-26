@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import useSWRMutation from "swr/mutation";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import {
     signInWithEmailAndPassword,
     GoogleAuthProvider,
@@ -20,119 +22,77 @@ import {
     AlertCircle,
     CheckCircle2,
 } from "lucide-react";
+import { FirebaseError } from "firebase/app";
 
-// Form için tip tanımlamamız
 type LoginFormInputs = {
     email: string;
     pass: string;
     rememberMe: boolean;
 };
 
-// Firebase hatalarını Türkçeleştiren yardımcı fonksiyon
-import { FirebaseError } from "firebase/app"; // Tip kontrolü için gerekli
+const schema: yup.ObjectSchema<LoginFormInputs> = yup.object({
+    email: yup.string().required("E-posta zorunlu").email("Geçerli bir e-posta girin"),
+    pass: yup.string().required("Şifre zorunlu").min(6, "Şifre en az 6 karakter olmalı"),
+    rememberMe: yup.boolean().default(false),
+});
 
 const getErrorMessage = (err: unknown) => {
-    // Eğer hata bir FirebaseError ise
     if (err instanceof FirebaseError) {
         switch (err.code) {
-            case 'auth/invalid-credential':
+            case "auth/invalid-credential":
                 return "E-posta veya şifre hatalı. Lütfen bilgilerinizi kontrol edin.";
-            case 'auth/user-not-found':
-                return "Böyle bir kullanıcı bulunamadı.";
-            case 'auth/wrong-password':
-                return "Şifre yanlış.";
-            case 'auth/too-many-requests':
+
+            case "auth/too-many-requests":
                 return "Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.";
             default:
                 return `Bir hata oluştu: ${err.message}`;
         }
     }
-
-    // Standart bir JS Error ise
     if (err instanceof Error) return err.message;
-
     return "Beklenmedik bir hata oluştu.";
 };
+
 export default function LoginPage() {
     const router = useRouter();
     const sp = useSearchParams();
     const next = sp.get("next") || "/home";
 
-    // Başarı mesajını tutmak için sadece bunu bırakıyoruz
-    // (Hata mesajları SWR'dan gelecek)
-    const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-    // 1. React Hook Form Kurulumu
     const {
         register,
         handleSubmit,
-        formState: { errors },
-    } = useForm<LoginFormInputs>();
+        formState: { errors, isSubmitting },
+        setError,
+        reset,
+    } = useForm<LoginFormInputs>({
+        resolver: yupResolver(schema),
+        defaultValues: { email: "", pass: "", rememberMe: false },
+        mode: "onTouched",
+    });
 
-    // 2. SWR Mutation: E-Posta ile Giriş
-    const {
-        trigger: triggerEmailLogin,
-        isMutating: isEmailLoading,
-        error: emailError,
-        reset: resetEmailError
-    } = useSWRMutation(
-        "auth/email-login",
-        async (key, { arg }: { arg: LoginFormInputs }) => {
-            try {
-                await signInWithEmailAndPassword(auth, arg.email, arg.pass);
-            } catch (err) {
+    const [success, setSuccess] = useState<string | null>(null);
 
-                // SWR'ın yakalayabilmesi için hatayı fırlatıyoruz
-                throw new Error(getErrorMessage(err));
-            }
-        },
-        {
-            onSuccess: () => {
-                setSuccessMsg("Giriş başarılı! Yönlendiriliyorsunuz...");
-                setTimeout(() => router.replace(next), 1000);
-            }
+    const onSubmit = async (values: LoginFormInputs) => {
+        setSuccess(null);
+        try {
+            await signInWithEmailAndPassword(auth, values.email.trim(), values.pass);
+            setSuccess("Giriş başarılı, yönlendiriliyorsunuz...");
+            reset({ ...values, pass: "" });
+            router.replace(next);
+        } catch (err) {
+            setError("root", { message: getErrorMessage(err) });
         }
-    );
-
-    // 3. SWR Mutation: Google ile Giriş
-    const {
-        trigger: triggerGoogleLogin,
-        isMutating: isGoogleLoading,
-        error: googleError,
-        reset: resetGoogleError
-    } = useSWRMutation(
-        "auth/google-login",
-        async () => {
-            try {
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
-            } catch (err) {
-                throw new Error(getErrorMessage(err));
-            }
-        },
-        {
-            onSuccess: () => {
-                setSuccessMsg("Google ile giriş başarılı! Yönlendiriliyorsunuz...");
-                setTimeout(() => router.replace(next), 1000);
-            }
-        }
-    );
-
-    // Herhangi bir işlem devam ediyorsa loading true olsun
-    const isLoading = isEmailLoading || isGoogleLoading;
-
-    // SWR'dan gelen hataları veya bizim başarı mesajımızı birleştirelim
-    const currentError = emailError?.message || googleError?.message;
-
-    // Form Gönderim İşleyicisi
-    const onSubmit = (data: LoginFormInputs) => {
-        resetGoogleError(); // Önceki Google hatasını temizle
-        triggerEmailLogin(data);
     };
 
-    const handleGoogleLogin = () => {
-        resetEmailError(); // Önceki Email hatasını temizle
-        triggerGoogleLogin();
+    const onGoogle = async () => {
+        setSuccess(null);
+        try {
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            setSuccess("Google ile giriş başarılı, yönlendiriliyorsunuz...");
+            router.replace(next);
+        } catch (err) {
+            setError("root", { message: getErrorMessage(err) });
+        }
     };
 
     return (
@@ -147,126 +107,108 @@ export default function LoginPage() {
                             Tech<span className="text-indigo-600">Store</span>
                         </span>
                     </Link>
-                    <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-                        Tekrar Hoş Geldiniz
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Hesabınıza giriş yaparak alışverişe devam edin.
+
+                    <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">Giriş Yap</h2>
+                    <p className="mt-2 text-sm text-gray-500">
+                        Hesabın yok mu?{" "}
+                        <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                            Kayıt Ol
+                        </Link>
                     </p>
                 </div>
 
-                <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/50">
-
-                    {/* Hata veya Başarı Mesajı Alanı */}
-                    {(successMsg || currentError) && (
-                        <div className={`mb-6 flex items-center gap-3 rounded-xl p-4 text-sm font-medium ${successMsg
-                            ? 'bg-green-50 text-green-700 border border-green-100'
-                            : 'bg-red-50 text-red-700 border border-red-100'
-                            }`}>
-                            {successMsg ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                            {successMsg || currentError}
+                <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-100">
+                    {errors.root?.message ? (
+                        <div className="mb-6 flex items-start gap-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+                            <AlertCircle className="mt-0.5 h-5 w-5" />
+                            <span>{errors.root.message}</span>
                         </div>
-                    )}
+                    ) : null}
 
-                    <div className="space-y-6">
+                    {success ? (
+                        <div className="mb-6 flex items-start gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5" />
+                            <span>{success}</span>
+                        </div>
+                    ) : null}
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">E-posta</label>
+                            <div className="relative mt-2">
+                                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="email"
+                                    autoComplete="email"
+                                    placeholder="mail@ornek.com"
+                                    className={`w-full rounded-2xl border bg-white py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${errors.email ? "border-red-200" : "border-gray-200"}`}
+                                    {...register("email")}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            {errors.email?.message ? <p className="mt-1 text-xs text-red-600">{errors.email.message}</p> : null}
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Şifre</label>
+                            <div className="relative mt-2">
+                                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="password"
+                                    autoComplete="current-password"
+                                    placeholder="••••••••"
+                                    className={`w-full rounded-2xl border bg-white py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${errors.pass ? "border-red-200" : "border-gray-200"}`}
+                                    {...register("pass")}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            {errors.pass?.message ? <p className="mt-1 text-xs text-red-600">{errors.pass.message}</p> : null}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <label className="inline-flex items-center gap-2 text-sm text-gray-600">
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                    {...register("rememberMe")}
+                                    disabled={isSubmitting}
+                                />
+                                Beni hatırla
+                            </label>
+
+                            <Link href="/home" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+                                Ana sayfaya dön
+                            </Link>
+                        </div>
+
                         <button
-                            type="button"
-                            onClick={handleGoogleLogin}
-                            disabled={isLoading}
-                            className="relative flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70"
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 disabled:opacity-60"
                         >
-                            {/* Google SVG Logo */}
-                            <svg className="h-5 w-5" viewBox="0 0 24 24">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05" />
-                                <path d="M12 4.63c1.61 0 3.06.56 4.21 1.64l3.16-3.16C17.45 1.09 14.97 0 12 0 7.7 0 3.99 2.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                            </svg>
-                            <span>Google ile Devam Et</span>
+                            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
+                            {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
                         </button>
 
-                        <div className="relative">
+                        <div className="relative py-2">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-gray-200" />
                             </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="bg-white px-4 text-gray-500">veya e-posta ile</span>
+                            <div className="relative flex justify-center text-xs">
+                                <span className="bg-white px-2 text-gray-500">veya</span>
                             </div>
                         </div>
 
-                        {/* RHF handleSubmit kullanımı */}
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                            <div>
-                                <label className="sr-only">Email</label>
-                                <div className="relative">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <Mail className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        type="email"
-                                        {...register("email", { required: "E-posta alanı zorunludur" })}
-                                        className="block w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 pl-10 pr-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-all"
-                                        placeholder="E-posta Adresi"
-                                    />
-                                </div>
-                                {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
-                            </div>
-
-                            <div>
-                                <label className="sr-only">Şifre</label>
-                                <div className="relative">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <Lock className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        type="password"
-                                        {...register("pass", { required: "Şifre alanı zorunludur" })}
-                                        className="block w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 pl-10 pr-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm transition-all"
-                                        placeholder="Şifre"
-                                    />
-                                </div>
-                                {errors.pass && <p className="mt-1 text-xs text-red-500">{errors.pass.message}</p>}
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                    <input
-                                        id="remember-me"
-                                        type="checkbox"
-                                        {...register("rememberMe")}
-                                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                    />
-                                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                                        Beni hatırla
-                                    </label>
-                                </div>
-
-                                <div className="text-sm">
-                                    <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-                                        Şifremi unuttum?
-                                    </a>
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="group relative flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:shadow-none"
-                            >
-                                {isEmailLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                                {isEmailLoading ? "Giriş Yapılıyor..." : "Giriş Yap"}
-                                {!isEmailLoading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
-                            </button>
-                        </form>
-                    </div>
+                        <button
+                            type="button"
+                            onClick={onGoogle}
+                            disabled={isSubmitting}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                        >
+                            Google ile giriş yap
+                        </button>
+                    </form>
                 </div>
-
-                <p className="text-center text-sm text-gray-600">
-                    Henüz hesabınız yok mu?{" "}
-                    <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline">
-                        Hemen Kayıt Olun
-                    </Link>
-                </p>
             </div>
         </div>
     );

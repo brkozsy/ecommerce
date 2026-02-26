@@ -4,71 +4,78 @@ import { requireAdmin } from "@/lib/server/auth/adminGuard";
 
 export const runtime = "nodejs";
 
-function toNumberStrict(v: any) {
-    if (v === undefined || v === null || v === "") return NaN;
-    const n = typeof v === "string" ? Number(v) : v;
-    return Number.isFinite(n) ? n : NaN;
-}
-
-export async function GET() {
+export async function GET(req: Request) {
     try {
-        await requireAdmin();
+        await requireAdmin(req);
 
-        const snap = await adminDb
-            .collection("products")
-            .orderBy("createdAt", "desc")
-            .limit(100)
-            .get();
+        if (!adminDb) {
+            throw new Error("Firestore Admin SDK başlatılamadı.");
+        }
 
-        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const snap = await adminDb.collection("products").orderBy("createdAt", "desc").get();
+
+        const items = snap.docs.map((d) => {
+            const data = d.data();
+            return {
+                id: d.id,
+                title: data.title ?? "Başlıksız Ürün",
+                category: data.category ?? "Genel",
+                price: Number(data.price ?? 0),
+                stock: Number(data.stock ?? 0),
+                isActive: data.isActive !== false,
+                imageUrl: data.imageUrl ?? null,
+            };
+        });
+
         return NextResponse.json({ ok: true, items });
     } catch (e: any) {
-        const msg = String(e?.message || e);
-        const status = msg === "UNAUTHENTICATED" ? 401 : msg === "FORBIDDEN" ? 403 : 500;
-        return NextResponse.json({ ok: false, error: msg }, { status });
+        console.error("--- ADMIN API GET HATASI ---", e);
+        return NextResponse.json(
+            { ok: false, error: e?.message || "Sunucu hatası" },
+            { status: 500 }
+        );
     }
 }
 
 export async function POST(req: Request) {
     try {
-        await requireAdmin();
+        await requireAdmin(req);
 
         const body = await req.json().catch(() => null);
-        if (!body) return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-
-        const title = String(body.title || "").trim();
-        const description = String(body.description || "").trim();
-        const imageUrl = String(body.imageUrl || "").trim();
-
-        const price = toNumberStrict(body.price);
-        const stockRaw = toNumberStrict(body.stock);
-        const stock = Math.floor(stockRaw); // stok tam sayı
-
-        const isActive = body.isActive !== false; // default true
-
-        if (!title) return NextResponse.json({ ok: false, error: "title required" }, { status: 400 });
-        if (!Number.isFinite(price)) return NextResponse.json({ ok: false, error: "price must be number" }, { status: 400 });
-        if (!Number.isFinite(stockRaw) || stock < 0) {
-            return NextResponse.json({ ok: false, error: "stock must be 0 or positive integer" }, { status: 400 });
+        if (!body) {
+            return NextResponse.json({ ok: false, error: "Geçersiz veri formatı" }, { status: 400 });
         }
 
-        const now = new Date();
 
-        const ref = await adminDb.collection("products").add({
-            title,
-            description: description || null,
-            imageUrl: imageUrl || null,
-            price,
-            stock,
-            isActive,
-            createdAt: now,
-            updatedAt: now,
+        const productData = {
+            title: String(body.title || "").trim(),
+            category: String(body.category || "").trim(),
+            description: String(body.description || "").trim() || null,
+            price: Number(body.price || 0),
+            stock: Math.floor(Number(body.stock || 0)),
+            imageUrl: body.imageUrl?.trim() || null,
+            isActive: body.isActive !== false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+
+        if (!productData.title || !productData.category) {
+            return NextResponse.json({ ok: false, error: "Başlık ve Kategori alanları zorunludur." }, { status: 400 });
+        }
+
+        const docRef = await adminDb.collection("products").add(productData);
+
+        return NextResponse.json({
+            ok: true,
+            message: "Ürün başarıyla oluşturuldu",
+            id: docRef.id
         });
 
-        return NextResponse.json({ ok: true, id: ref.id });
     } catch (e: any) {
-        const msg = String(e?.message || e);
-        const status = msg === "UNAUTHENTICATED" ? 401 : msg === "FORBIDDEN" ? 403 : 500;
-        return NextResponse.json({ ok: false, error: msg }, { status });
+        console.error("--- ADMIN API POST HATASI ---", e);
+        return NextResponse.json(
+            { ok: false, error: e?.message || "Ürün eklenirken sunucu hatası oluştu" },
+            { status: 500 }
+        );
     }
 }

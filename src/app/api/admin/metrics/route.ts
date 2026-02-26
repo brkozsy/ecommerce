@@ -14,9 +14,9 @@ async function safeCount(col: string) {
     }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
-        await requireAdmin();
+        await requireAdmin(req);
 
         const [ordersCount, productsCount] = await Promise.all([
             safeCount("orders"),
@@ -36,12 +36,7 @@ export async function GET() {
 
         return NextResponse.json({
             ok: true,
-            metrics: {
-                ordersCount,
-                pendingCount,
-                productsCount,
-                revenue,
-            },
+            metrics: { ordersCount, pendingCount, productsCount, revenue },
         });
     } catch (e: any) {
         const msg = String(e?.message || e);

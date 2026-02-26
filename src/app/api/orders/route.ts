@@ -25,9 +25,9 @@ export async function GET(req: Request) {
 
         const items = snap.docs.map((d) => {
             const data: any = d.data();
-            const createdAt =
-                data.createdAt?.toDate?.() ? data.createdAt.toDate().getTime() : data.createdAt ?? Date.now();
-
+            const createdAt = data.createdAt?.toDate?.()
+                ? data.createdAt.toDate().getTime()
+                : Number(data.createdAt ?? Date.now());
             return { id: d.id, ...data, createdAt };
         });
 
@@ -45,39 +45,84 @@ export async function POST(req: Request) {
         const body = await req.json().catch(() => null);
         if (!body) return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
 
-        const { items, total, shipping, payment } = body as any;
-
-        if (!Array.isArray(items) || items.length === 0) {
-            return NextResponse.json({ ok: false, error: "Items boş" }, { status: 400 });
-        }
-
-        const safeTotal =
-            typeof total === "number"
-                ? total
-                : items.reduce((s: number, it: any) => s + Number(it.price) * Number(it.qty), 0);
-
         const { adminAuth, adminDb } = await import("@/lib/server/firebase/admin");
         const decoded = await adminAuth.verifyIdToken(token);
+        const uid = decoded.uid;
 
-        const doc = {
-            userId: decoded.uid,
-            items: items.map((it: any) => ({
-                id: String(it.id ?? ""),
-                title: String(it.title ?? ""),
-                price: Number(it.price ?? 0),
-                qty: Number(it.qty ?? 1),
-            })),
-            total: Number(safeTotal),
-            status: "pending",
-            shipping: shipping ?? {},
-            payment: payment ?? {},
-            createdAt: new Date(),
-        };
+        const shipping = body.shipping ?? {};
+        const payment = body.payment ?? {};
 
-        const ref = await adminDb.collection("orders").add(doc);
+        const cartRef = adminDb.collection("carts").doc(uid);
 
-        return NextResponse.json({ ok: true, id: ref.id }, { status: 201 });
+        const result = await adminDb.runTransaction(async (tx) => {
+            const cartSnap = await tx.get(cartRef);
+            const cartData: any = cartSnap.exists ? cartSnap.data() : {};
+            const cartItems: Array<{ productId: string; qty: number }> = Array.isArray(cartData.items) ? cartData.items : [];
+
+            if (!cartItems.length) throw new Error("Sepet boş");
+
+            const productRefs = cartItems.map((it) => adminDb.collection("products").doc(it.productId));
+            const productSnaps = await Promise.all(productRefs.map((r) => tx.get(r)));
+
+            const orderItems: any[] = [];
+
+            for (let i = 0; i < cartItems.length; i++) {
+                const it = cartItems[i];
+                const pSnap = productSnaps[i];
+                if (!pSnap.exists) throw new Error("Ürün bulunamadı");
+
+                const p: any = pSnap.data();
+                const stock = Number(p.stock ?? 0);
+                const qty = Math.max(1, Math.floor(Number(it.qty ?? 1)));
+
+                if (!Number.isFinite(stock)) throw new Error("Ürün stoğu geçersiz");
+                if (qty > stock) throw new Error("Stok yetersiz");
+
+                orderItems.push({
+                    id: pSnap.id,
+                    title: String(p.title ?? ""),
+                    price: Number(p.price ?? 0),
+                    qty,
+                    imageUrl: p.imageUrl ?? "",
+                    category: p.category ?? "",
+                });
+            }
+
+            // stok düş
+            for (let i = 0; i < cartItems.length; i++) {
+                const it = cartItems[i];
+                const pRef = productRefs[i];
+                const pSnap = productSnaps[i];
+                const p: any = pSnap.data();
+                const stock = Number(p.stock ?? 0);
+                const qty = Math.max(1, Math.floor(Number(it.qty ?? 1)));
+                tx.update(pRef, { stock: stock - qty });
+            }
+
+            const total = orderItems.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
+
+            const orderRef = adminDb.collection("orders").doc();
+            tx.set(orderRef, {
+                userId: uid,
+                items: orderItems,
+                total,
+                status: "pending",
+                shipping,
+                payment,
+                createdAt: new Date(),
+            });
+
+            // cart temizle
+            tx.set(cartRef, { items: [], updatedAt: new Date() }, { merge: true });
+
+            return { orderId: orderRef.id };
+        });
+
+        return NextResponse.json({ ok: true, id: result.orderId }, { status: 201 });
     } catch (e: any) {
-        return NextResponse.json({ ok: false, error: e?.message ?? "Server error" }, { status: 500 });
+        const msg = e?.message ?? "Server error";
+        if (msg === "Stok yetersiz") return NextResponse.json({ ok: false, error: msg }, { status: 409 });
+        if (msg === "Sepet boş") return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+        return NextResponse.json({ ok: false, error: msg }, { status: 500 });
     }
 }

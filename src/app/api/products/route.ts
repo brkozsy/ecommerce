@@ -1,42 +1,36 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/server/firebase/admin";
+import { requireAdmin } from "@/lib/server/auth/adminGuard";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-function toNumber(v: any, fallback = 0) {
-    if (v === undefined || v === null || v === "") return fallback;
-    const n = typeof v === "string" ? Number(v) : v;
-    return Number.isFinite(n) ? n : fallback;
-}
-
-export async function GET() {
+export async function GET(req: Request) {
     try {
-        const snap = await adminDb.collection("products").limit(20).get();
+        // Yetki kontrolü
 
-        const items = snap.docs.map((d) => {
-            const p: any = d.data();
 
-            const stock = toNumber(p.stock, 0);
-            const isActive = p.isActive !== false;
-            const inStock = isActive && stock > 0;
+        // Firebase'den veri çekme
+        const snap = await adminDb.collection("products").get();
 
-            return {
-                id: d.id,
-                title: p.title ?? "",
-                price: toNumber(p.price, 0),
-                stock,
-                inStock,
-                imageUrl: p.imageUrl ?? null,
-                description: p.description ?? null,
-                isActive,
-                createdAt: p.createdAt?.toDate ? p.createdAt.toDate().toISOString() : null,
-            };
-        });
+        // Eğer koleksiyon boşsa hata verme, boş dizi dön
+        if (snap.empty) {
+            return NextResponse.json({ ok: true, items: [] });
+        }
+
+        const items = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+            // Sayısal değerleri garantiye al
+            price: Number(d.data().price || 0),
+            stock: Number(d.data().stock || 0),
+        }));
 
         return NextResponse.json({ ok: true, items });
-    } catch (err: any) {
-        console.error("GET /api/products error:", err);
-        return NextResponse.json({ ok: false, error: err?.message ?? "Internal error" }, { status: 500 });
+    } catch (e: any) {
+        console.error("API_HATASI:", e); // Terminale (VS Code) bak, hata burada yazacak
+        return NextResponse.json(
+            { ok: false, error: e?.message || "Sunucu hatası oluştu" },
+            { status: 500 }
+        );
     }
 }

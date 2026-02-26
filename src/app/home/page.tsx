@@ -1,75 +1,11 @@
-import { headers } from "next/headers";
-import ProductList from "@/components/ProductList";
 import FilterBar from "@/components/FilterBar";
-import type { Product } from "@/types/product";
-import {
-  ShoppingBag,
-  Truck,
-  ShieldCheck,
-  Zap,
-  Tag
-} from "lucide-react";
+import HomeProductsClient from "@/components/HomeProductsClient";
+import { ShoppingBag, Truck, ShieldCheck, Zap, Tag } from "lucide-react";
 
-
-
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  if (!host) return "http://localhost:3000";
-  return `${proto}://${host}`;
-}
-
-async function getProducts(): Promise<Product[]> {
-  try {
-    const base = await getBaseUrl();
-    const res = await fetch(`${base}/api/products`, { cache: "no-store" });
-    const data = await res.json().catch(() => null);
-    if (!res.ok || !data?.ok) return [];
-    return (data.items ?? []) as Product[];
-  } catch {
-    return [];
-  }
-}
-
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ category?: string; sort?: string }>;
-}) {
-  const items = await getProducts();
-  const params = await searchParams;
-  const category = params.category;
-  const sort = params.sort;
-
-  let filteredItems = items.filter((item) => {
-    if (!category || category === "Hepsi") return true;
-
-    const selectedCat = category.toLowerCase().trim();
-    const itemTitle = (item.title || "").toLowerCase().trim();
-
-
-
-    if (selectedCat === "telefon" && (itemTitle.includes("telefon") || itemTitle.includes("iphone"))) return true;
-    if (selectedCat === "bilgisayar" && (itemTitle.includes("laptop") || itemTitle.includes("pc") || itemTitle.includes("bilgisayar"))) return true;
-    if (selectedCat === "oyun konsolu" && (itemTitle.includes("playstation") || itemTitle.includes("xbox") || itemTitle.includes("konsol") || itemTitle.includes("ps5"))) return true;
-    if (selectedCat === "tablet" && itemTitle.includes("tablet")) return true;
-    if (selectedCat === "şarj aleti" && itemTitle.includes("şarj")) return true;
-    if (selectedCat === "saat" && itemTitle.includes("saat")) return true;
-
-    return false;
-  });
-
-  if (sort === "price-asc") {
-    filteredItems = [...filteredItems].sort((a, b) => a.price - b.price);
-  } else if (sort === "price-desc") {
-    filteredItems = [...filteredItems].sort((a, b) => b.price - a.price);
-  }
-
+export default async function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
-
         <section className="relative mb-12 overflow-hidden rounded-xl bg-indigo-600 text-white shadow-xl shadow-indigo-200">
           <div className="relative z-10 grid items-center gap-8 px-6 py-12 lg:grid-cols-2 lg:px-12 lg:py-16">
             <div className="space-y-6">
@@ -95,7 +31,10 @@ export default async function HomePage({
             { icon: Tag, title: "Uygun Fiyat", desc: "En iyi fiyat garantisi" },
             { icon: ShoppingBag, title: "Kolay İade", desc: "14 gün içinde iade hakkı" },
           ].map((feature, idx) => (
-            <div key={idx} className="flex items-start gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+            <div
+              key={idx}
+              className="flex items-start gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            >
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                 <feature.icon className="h-6 w-6" />
               </div>
@@ -113,28 +52,15 @@ export default async function HomePage({
               Öne Çıkan Ürünler
             </h2>
             <p className="mt-2 text-sm text-gray-500">
-              {category && category !== "Hepsi" ? `${category} kategorisi için sonuçlar.` : "Sizin için seçtiğimiz en popüler ürünleri inceleyin."}
+              Sizin için seçtiğimiz en popüler ürünleri inceleyin.
             </p>
           </div>
 
           <FilterBar />
-
-          <div className="mt-4 flex items-center justify-between">
-            <span className="inline-flex items-center rounded-lg bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
-              {filteredItems.length} Ürün Bulundu
-            </span>
-          </div>
         </div>
 
-        {filteredItems.length > 0 ? (
-          <ProductList items={filteredItems} />
-        ) : (
-          <div className="flex h-64 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50">
-            <p className="text-gray-500">Bu kriterlere uygun ürün bulunamadı.</p>
-          </div>
-        )}
+        <HomeProductsClient />
       </div>
     </main>
   );
 }
-
