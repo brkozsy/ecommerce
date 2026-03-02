@@ -63,102 +63,128 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50/50 px-4 py-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8">
+        <div className="relative flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8 overflow-hidden">
+
+            <div className="absolute inset-0 z-0">
+                <img
+                    src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop"
+                    alt="Background"
+                    className="h-full w-full object-cover scale-105"
+                />
+                <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px]" />
+                <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-transparent to-gray-900/40" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-[420px] space-y-8">
+
                 <div className="text-center">
                     <Link href="/" className="inline-flex items-center gap-2 group">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 transition-transform group-hover:scale-110">
-                            <Zap className="h-6 w-6 fill-current" />
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-600/40 transition-transform group-hover:scale-110">
+                            <Zap className="h-7 w-7 fill-current" />
                         </div>
-                        <span className="text-2xl font-bold tracking-tight text-gray-900">
-                            Tech<span className="text-indigo-600">Store</span>
+                        <span className="text-3xl font-black tracking-tight text-white drop-shadow-md">
+                            Tech<span className="text-indigo-400">Store</span>
                         </span>
                     </Link>
-
-                    <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-                        Hesap Oluştur
+                    <h2 className="mt-6 text-2xl font-bold tracking-tight text-white drop-shadow-sm">
+                        Aramıza Katılın
                     </h2>
-                    <p className="mt-2 text-sm text-gray-500">
-                        Zaten hesabın var mı?{" "}
-                        <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                            Giriş Yap
-                        </Link>
+                    <p className="mt-2 text-sm text-gray-300 font-medium">
+                        Yeni bir hesap oluşturarak ayrıcalıklardan faydalanın.
                     </p>
                 </div>
 
-                <div className="rounded-3xl bg-white p-8 shadow-sm border border-gray-100">
-                    {errors.root?.message ? (
-                        <div className="mb-6 flex items-start gap-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-                            <AlertCircle className="mt-0.5 h-5 w-5" />
+                <div className="rounded-[2.5rem] border border-white/20 bg-white/95 backdrop-blur-xl p-8 sm:p-10 shadow-2xl shadow-black/40">
+
+                    {errors.root?.message && (
+                        <div className="mb-6 flex items-start gap-3 rounded-2xl p-4 text-sm font-semibold border border-red-200 bg-red-50 text-red-700">
+                            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
                             <span>{errors.root.message}</span>
                         </div>
-                    ) : null}
+                    )}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+
                         <div>
-                            <label className="text-sm font-medium text-gray-700">Ad Soyad</label>
-                            <div className="relative mt-2">
-                                <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                            <label className="block text-sm font-bold text-gray-900 mb-1.5">Ad Soyad</label>
+                            <div className="relative group">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                    <User className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                                </div>
                                 <input
                                     type="text"
                                     autoComplete="name"
-                                    placeholder="Burak Özsoy"
-                                    className={`w-full rounded-2xl border bg-white py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${errors.name ? "border-red-200" : "border-gray-200"}`}
                                     {...register("name")}
+                                    className={`block w-full rounded-2xl border bg-white py-3.5 pl-12 pr-4 text-sm font-medium text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all outline-none shadow-sm ${errors.name ? "border-red-300 focus:border-red-500" : "border-gray-200 hover:border-gray-300"}`}
+                                    placeholder="Adınız ve Soyadınız"
                                     disabled={isSubmitting}
                                 />
                             </div>
-                            {errors.name?.message ? (
-                                <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
-                            ) : null}
+                            {errors.name && <p className="mt-1.5 text-xs font-bold text-red-500 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.name.message}</p>}
                         </div>
 
                         <div>
-                            <label className="text-sm font-medium text-gray-700">E-posta</label>
-                            <div className="relative mt-2">
-                                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                            <label className="block text-sm font-bold text-gray-900 mb-1.5">E-posta</label>
+                            <div className="relative group">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                    <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                                </div>
                                 <input
                                     type="email"
                                     autoComplete="email"
-                                    placeholder="mail@ornek.com"
-                                    className={`w-full rounded-2xl border bg-white py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${errors.email ? "border-red-200" : "border-gray-200"}`}
                                     {...register("email")}
+                                    className={`block w-full rounded-2xl border bg-white py-3.5 pl-12 pr-4 text-sm font-medium text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all outline-none shadow-sm ${errors.email ? "border-red-300 focus:border-red-500" : "border-gray-200 hover:border-gray-300"}`}
+                                    placeholder="ornek@sirket.com"
                                     disabled={isSubmitting}
                                 />
                             </div>
-                            {errors.email?.message ? (
-                                <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-                            ) : null}
+                            {errors.email && <p className="mt-1.5 text-xs font-bold text-red-500 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.email.message}</p>}
                         </div>
 
                         <div>
-                            <label className="text-sm font-medium text-gray-700">Şifre</label>
-                            <div className="relative mt-2">
-                                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                            <label className="block text-sm font-bold text-gray-900 mb-1.5">Şifre</label>
+                            <div className="relative group">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                    <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                                </div>
                                 <input
                                     type="password"
                                     autoComplete="new-password"
-                                    placeholder="••••••••"
-                                    className={`w-full rounded-2xl border bg-white py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${errors.password ? "border-red-200" : "border-gray-200"}`}
                                     {...register("password")}
+                                    className={`block w-full rounded-2xl border bg-white py-3.5 pl-12 pr-4 text-sm font-medium text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all outline-none shadow-sm ${errors.password ? "border-red-300 focus:border-red-500" : "border-gray-200 hover:border-gray-300"}`}
+                                    placeholder="En az 6 karakter"
                                     disabled={isSubmitting}
                                 />
                             </div>
-                            {errors.password?.message ? (
-                                <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
-                            ) : null}
+                            {errors.password && <p className="mt-1.5 text-xs font-bold text-red-500 flex items-center gap-1"><AlertCircle className="h-3 w-3" />{errors.password.message}</p>}
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700 disabled:opacity-60"
-                        >
-                            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
-                            {isSubmitting ? "Hesap oluşturuluyor..." : "Kayıt Ol"}
-                        </button>
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-4 text-sm font-bold text-white shadow-xl shadow-indigo-600/30 transition-all hover:bg-indigo-700 hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" /> Kayıt Yapılıyor...
+                                    </>
+                                ) : (
+                                    <>
+                                        Hesap Oluştur <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </form>
                 </div>
+
+                <p className="text-center text-sm text-gray-300 font-medium">
+                    Zaten hesabınız var mı?{" "}
+                    <Link href="/login" className="font-bold text-white hover:text-indigo-300 hover:underline transition-colors">
+                        Giriş Yapın
+                    </Link>
+                </p>
             </div>
         </div>
     );

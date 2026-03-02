@@ -36,7 +36,6 @@ export default function AdminDashboard() {
         { revalidateOnFocus: false }
     );
 
-    // 1. YÜKLENİYOR DURUMU
     if (isLoading) {
         return (
             <main className="min-h-screen bg-[#F4F4F5] px-4 py-10 flex flex-col items-center justify-center">
@@ -46,7 +45,6 @@ export default function AdminDashboard() {
         );
     }
 
-    // 2. HATA DURUMU
     if (error) {
         return (
             <main className="min-h-screen bg-[#F4F4F5] px-4 py-10 flex items-center justify-center">
@@ -68,7 +66,6 @@ export default function AdminDashboard() {
         <main className="min-h-screen bg-[#F4F4F5] px-4 py-8 md:py-12">
             <div className="mx-auto max-w-6xl">
 
-                {/* ÜST BİLGİ (HEADER) */}
                 <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>
                         <div className="flex items-center gap-2 mb-2">
@@ -102,7 +99,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Toplam Sipariş Kartı */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-bold text-gray-500">Tüm Siparişler</h3>
@@ -116,7 +112,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Bekleyen Sipariş Kartı (Dikkat Çekici) */}
                     <div className={`rounded-2xl border ${pendingCount > 0 ? "border-orange-200 bg-orange-50/30" : "border-gray-200 bg-white"} p-6 shadow-sm hover:shadow-md transition-shadow`}>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-bold text-gray-500">Bekleyen Sipariş</h3>
@@ -134,7 +129,6 @@ export default function AdminDashboard() {
                         )}
                     </div>
 
-                    {/* Toplam Ürün Kartı */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-bold text-gray-500">Aktif Ürünler</h3>
@@ -149,11 +143,9 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* HIZLI İŞLEMLER BÖLÜMÜ */}
                 <h2 className="text-lg font-bold text-gray-900 mt-12 mb-6">Hızlı İşlemler</h2>
                 <div className="grid gap-6 sm:grid-cols-2">
 
-                    {/* Sipariş Yönetimi Kartı */}
                     <Link href="/admin/orders" className="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-6 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50/50 transition-all">
                         <div className="flex items-center gap-4">
                             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
@@ -169,7 +161,6 @@ export default function AdminDashboard() {
                         </div>
                     </Link>
 
-                    {/* Ürün Yönetimi Kartı */}
                     <Link href="/admin/products" className="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-6 hover:border-purple-200 hover:shadow-lg hover:shadow-purple-50/50 transition-all">
                         <div className="flex items-center gap-4">
                             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">

@@ -7,12 +7,10 @@ import { Loader2, Trash2, Pencil, Plus, AlertCircle, Search, Package } from "luc
 import { useState } from "react";
 
 export default function AdminProductsClient() {
-    // adminListProducts direkt dizi döndürdüğü için 'data' artık ürün dizisidir.
     const { data, isLoading, error, mutate } = useSWR("admin-products", adminListProducts);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // KESİN ÇÖZÜM: adminListProducts zaten items'ı ayıklayıp döndürüyor.
     const items = Array.isArray(data) ? data : [];
 
     const filteredItems = items.filter((p: any) =>

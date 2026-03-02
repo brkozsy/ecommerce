@@ -16,10 +16,9 @@ type ProductLike = {
     description?: string | null;
 };
 
-// Ürün sayfası artık miktar (quantity) prop'unu gönderiyor
 interface AddToCartButtonProps {
     product: ProductLike;
-    quantity?: number; // Opsiyonel, varsayılan 1 olacak
+    quantity?: number;
 }
 
 function toNumber(v: any, fallback = 0) {
@@ -59,12 +58,10 @@ export default function AddToCartButton({ product, quantity = 1 }: AddToCartButt
         return () => window.clearTimeout(t);
     }, [added]);
 
-    // API'ye seçilen miktarı (quantity) gönderiyoruz
     const { trigger, isMutating } = useSWRMutation(
         "cart",
         async () => {
             const token = await tokenOrThrow();
-            // Sabit 1 yerine seçilen quantity değerini gönderiyoruz
             await cartAdd(token, product.id, quantity);
             return true;
         },
@@ -84,7 +81,6 @@ export default function AddToCartButton({ product, quantity = 1 }: AddToCartButt
         await trigger();
     }
 
-    // Durum mesajları
     const getButtonContent = () => {
         if (isMutating) return (
             <div className="flex items-center justify-center gap-2">

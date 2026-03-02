@@ -22,7 +22,6 @@ import {
     Check
 } from "lucide-react";
 
-// --- YARDIMCI TİPLER ---
 type ProductDTO = Product & {
     stock?: number | string | null;
     imageUrl?: string | null;
@@ -30,7 +29,6 @@ type ProductDTO = Product & {
     category?: string | null;
 };
 
-// --- YARDIMCI FONKSİYONLAR ---
 function toNumber(v: any, fallback = 0) {
     if (v === undefined || v === null || v === "") return fallback;
     const n = typeof v === "string" ? Number(v) : v;
@@ -58,7 +56,6 @@ export default function ProductPage() {
         () => getProduct(String(id))
     );
 
-    // Stok Hesaplamaları
     const stock = product ? toNumber((product as any).stock, 0) : 0;
     const inStock = stock > 0;
 
@@ -67,7 +64,6 @@ export default function ProductPage() {
         if (type === "dec" && quantity > 1) setQuantity((prev) => prev - 1);
     };
 
-    // Yükleniyor Ekranı (Sadeleştirilmiş)
     if (isLoading) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
@@ -76,7 +72,6 @@ export default function ProductPage() {
         );
     }
 
-    // Hata Ekranı (Sadeleştirilmiş)
     if (error || !product) {
         return (
             <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -94,7 +89,6 @@ export default function ProductPage() {
 
     return (
         <main className="min-h-screen bg-white pb-24">
-            {/* Breadcrumb - İnce ve Sade */}
             <div className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
                     <nav className="flex items-center gap-2 text-xs font-medium text-gray-500">
@@ -113,7 +107,6 @@ export default function ProductPage() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 <div className="lg:grid lg:grid-cols-12 lg:gap-x-12 items-start">
 
-                    {/* SOL: Ürün Görseli */}
                     <div className="lg:col-span-7">
                         <div className="aspect-square w-full rounded-2xl border border-gray-100 bg-gray-50/50 flex items-center justify-center p-8 relative">
                             {product.imageUrl ? (
@@ -128,9 +121,7 @@ export default function ProductPage() {
                         </div>
                     </div>
 
-                    {/* SAĞ: Ürün Detayları */}
                     <div className="lg:col-span-5 mt-10 lg:mt-0 space-y-8">
-                        {/* Başlık ve Kategori */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-sm font-semibold text-indigo-600">
@@ -153,7 +144,7 @@ export default function ProductPage() {
                                 </span>
                             </div>
 
-                            {/* Stok Durumu */}
+
                             <div className="mt-3">
                                 {inStock ? (
                                     <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
@@ -169,7 +160,7 @@ export default function ProductPage() {
                             </div>
                         </div>
 
-                        {/* Aksiyon Alanı (Sepete Ekle & Adet) */}
+
                         <div className="border-y border-gray-100 py-6">
                             <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Adet
@@ -198,7 +189,6 @@ export default function ProductPage() {
                                     </button>
                                 </div>
 
-                                {/* Buton Konteyneri */}
                                 <div className="flex-1">
                                     <AddToCartButton
                                         product={{
@@ -214,7 +204,6 @@ export default function ProductPage() {
                             </div>
                         </div>
 
-                        {/* Özellikler İkonları */}
                         <div className="grid grid-cols-3 gap-4">
                             {[
                                 { icon: Truck, title: "Ücretsiz Kargo" },
@@ -228,7 +217,7 @@ export default function ProductPage() {
                             ))}
                         </div>
 
-                        {/* Açıklama */}
+
                         <div>
                             <h3 className="text-base font-bold text-gray-900 mb-3">Ürün Açıklaması</h3>
                             <div className="prose prose-sm text-gray-600 max-w-none">

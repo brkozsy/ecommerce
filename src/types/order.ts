@@ -12,5 +12,5 @@ export type Order = {
     items: OrderItem[];
     total: number;
     status: "pending";
-    createdAt: string; // ISO
+    createdAt: string;
 };

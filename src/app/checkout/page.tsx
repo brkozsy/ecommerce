@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR, { mutate } from "swr";
-import { useForm, watch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { auth } from "@/lib/firebase/client";
@@ -131,7 +131,6 @@ export default function CheckoutPage() {
         }
     }
 
-    // GİRİŞ YAPILMAMIŞ DURUM
     if (!user) {
         return (
             <div className="min-h-screen bg-[#FAFAFB] flex items-center justify-center p-6">
@@ -171,7 +170,7 @@ export default function CheckoutPage() {
                         {msg && (
                             <div className={`mb-6 rounded-2xl border p-4 text-sm font-medium ${ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700"}`}>
                                 <div className="flex items-center gap-3">
-                                    {ok ? <CheckCircle2 className="h-5 w-5 flex-shrink-0" /> : <AlertCircle className="h-5 w-5 flex-shrink-0" />}
+                                    {ok ? <CheckCircle2 className="h-5 w-5 shrink-0" /> : <AlertCircle className="h-5 w-5 shrink-0" />}
                                     <p>{msg}</p>
                                 </div>
                             </div>
@@ -235,7 +234,6 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            {/* ÖDEME YÖNTEMİ KARTI */}
                             <div className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-sm">
                                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
                                     <CreditCard className="h-5 w-5 text-indigo-600" /> Ödeme Yöntemi
@@ -266,12 +264,10 @@ export default function CheckoutPage() {
                                 {errors.paymentMethod && <p className="mt-3 text-xs font-medium text-red-500 text-center">{errors.paymentMethod.message}</p>}
                             </div>
 
-                            {/* GİZLİ SUBMİT BUTONU (Formun enter ile çalışması için) */}
                             <button type="submit" id="checkout-submit" className="hidden" />
                         </form>
                     </div>
 
-                    {/* SAĞ KOLON: SİPARİŞ ÖZETİ */}
                     <div className="lg:col-span-5 mt-8 lg:mt-0">
                         <div className="sticky top-24 rounded-3xl border border-gray-100 bg-white shadow-xl shadow-gray-200/30 overflow-hidden">
                             <div className="p-6 sm:p-8 bg-gray-50/50 border-b border-gray-100">
@@ -287,12 +283,11 @@ export default function CheckoutPage() {
                                     <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
                                         {items.map((it: any) => (
                                             <div key={it.id} className="flex items-center gap-4 py-2">
-                                                <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-gray-50 border border-gray-100 p-1 flex items-center justify-center relative">
-                                                    {it.imageUrl ? (
-                                                        <img src={it.imageUrl} alt={it.title} className="h-full w-full object-contain mix-blend-multiply" />
-                                                    ) : (
-                                                        <Package className="h-6 w-6 text-gray-300" />
-                                                    )}
+                                                <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-50 border border-gray-100 p-1 flex items-center justify-center relative">                                                    {it.imageUrl ? (
+                                                    <img src={it.imageUrl} alt={it.title} className="h-full w-full object-contain mix-blend-multiply" />
+                                                ) : (
+                                                    <Package className="h-6 w-6 text-gray-300" />
+                                                )}
                                                     <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
                                                         {it.qty}
                                                     </span>

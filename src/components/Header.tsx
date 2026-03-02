@@ -93,8 +93,8 @@ export default function Header() {
 
             <header
                 className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled
-                        ? "border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm py-2"
-                        : "border-b border-transparent bg-white py-4"
+                    ? "border-b border-gray-200 bg-white/95 backdrop-blur-md shadow-sm py-2"
+                    : "border-b border-transparent bg-white py-4"
                     }`}
             >
                 <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
@@ -164,7 +164,7 @@ export default function Header() {
                                 <>
                                     <Link
                                         href="/login"
-                                        className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                                        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-white"
                                     >
                                         Giriş
                                     </Link>
