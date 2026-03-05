@@ -61,7 +61,7 @@ export default function AdminProductsClient() {
             </div>
 
             {filteredItems.length === 0 ? (
-                <div className="flex h-72 flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 bg-slate-50/50">
+                <div className="flex h-72 flex-col items-center justify-center rounded-2rem border-2 border-dashed border-slate-200 bg-slate-50/50">
                     <Package className="h-10 w-10 text-slate-300 mb-4" />
                     <p className="text-slate-500 font-medium">Görüntülenecek ürün bulunamadı.</p>
                 </div>
