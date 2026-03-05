@@ -1,3 +1,5 @@
+
+"use client";
 import FilterBar from "@/components/FilterBar";
 import HomeProductsClient from "@/components/HomeProductsClient";
 import { ShoppingBag, Truck, ShieldCheck, Zap, Tag } from "lucide-react";
