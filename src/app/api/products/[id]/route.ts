@@ -78,7 +78,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     }
 }
 
-export async function DELETE(_req: Request, ctx: Ctx) {
+export async function DELETE(req: Request, ctx: Ctx) {
     try {
         await requireAdmin(req); const { id } = await ctx.params;
 
