@@ -1,10 +1,10 @@
-
 "use client";
+
 import FilterBar from "@/components/FilterBar";
 import HomeProductsClient from "@/components/HomeProductsClient";
 import { ShoppingBag, Truck, ShieldCheck, Zap, Tag } from "lucide-react";
 
-export default async function HomePage() {
+export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
@@ -15,10 +15,12 @@ export default async function HomePage() {
                 <Zap className="h-3 w-3 text-yellow-300" />
                 <span>Yeni Sezon İndirimleri Başladı</span>
               </div>
+
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
                 Teknolojiyi Keşfet, <br />
                 <span className="text-indigo-200">Fark Yarat.</span>
               </h1>
+
               <p className="max-w-md text-lg text-indigo-100">
                 En yeni teknoloji ürünlerinde indirimleri kaçırma. Sınırlı stok!
               </p>
@@ -27,12 +29,14 @@ export default async function HomePage() {
         </section>
 
         <section className="mb-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { icon: Truck, title: "Hızlı Teslimat", desc: "Aynı gün kargo imkanı" },
-            { icon: ShieldCheck, title: "Güvenli Ödeme", desc: "256-bit SSL koruması" },
-            { icon: Tag, title: "Uygun Fiyat", desc: "En iyi fiyat garantisi" },
-            { icon: ShoppingBag, title: "Kolay İade", desc: "14 gün içinde iade hakkı" },
-          ].map((feature, idx) => (
+          {(
+            [
+              { icon: Truck, title: "Hızlı Teslimat", desc: "Aynı gün kargo imkanı" },
+              { icon: ShieldCheck, title: "Güvenli Ödeme", desc: "256-bit SSL koruması" },
+              { icon: Tag, title: "Uygun Fiyat", desc: "En iyi fiyat garantisi" },
+              { icon: ShoppingBag, title: "Kolay İade", desc: "14 gün içinde iade hakkı" },
+            ] as const
+          ).map((feature, idx) => (
             <div
               key={idx}
               className="flex items-start gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
