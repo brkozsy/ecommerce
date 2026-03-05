@@ -49,8 +49,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 export async function PATCH(req: Request, ctx: Ctx) {
     try {
-        await requireAdmin();
-        const { id } = await ctx.params;
+        await requireAdmin(req); const { id } = await ctx.params;
 
         const body = await req.json().catch(() => null);
         if (!body) return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
@@ -81,8 +80,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
     try {
-        await requireAdmin();
-        const { id } = await ctx.params;
+        await requireAdmin(req); const { id } = await ctx.params;
 
         await adminDb.collection("products").doc(id).delete();
         return NextResponse.json({ ok: true });
