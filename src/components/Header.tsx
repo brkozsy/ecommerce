@@ -116,11 +116,11 @@ export default function Header() {
                                             <User className="h-4 w-4" />
                                         </div>
                                         <div className="leading-tight">
-                                            <div className="text-sm font-semibold text-gray-900 max-w-[180px] truncate">
+                                            <div className="text-sm font-semibold text-gray-900 max-w-180px truncate">
                                                 {label}
                                             </div>
                                             {sub ? (
-                                                <div className="text-xs text-gray-500 max-w-[180px] truncate">
+                                                <div className="text-xs text-gray-500 max-w-180px truncate">
                                                     {sub}
                                                 </div>
                                             ) : null}

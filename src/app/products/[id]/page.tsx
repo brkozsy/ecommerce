@@ -97,7 +97,7 @@ export default function ProductPage() {
                             Ana Sayfa
                         </Link>
                         <ChevronRight className="h-3.5 w-3.5 text-gray-300" />
-                        <span className="text-gray-900 truncate max-w-[200px] sm:max-w-none">
+                        <span className="text-gray-900 truncate max-w-200px sm:max-w-none">
                             {product.title}
                         </span>
                     </nav>

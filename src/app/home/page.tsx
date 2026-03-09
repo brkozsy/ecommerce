@@ -1,22 +1,46 @@
+import { Suspense } from "react";
 import FilterBar from "@/components/FilterBar";
 import HomeProductsClient from "@/components/HomeProductsClient";
 import { ShoppingBag, Truck, ShieldCheck, Zap, Tag } from "lucide-react";
 
-export default async function HomePage() {
+function FilterBarFallback() {
+  return (
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap gap-2">
+        <div className="h-10 w-20 animate-pulse rounded-full bg-gray-200" />
+        <div className="h-10 w-24 animate-pulse rounded-full bg-gray-200" />
+        <div className="h-10 w-28 animate-pulse rounded-full bg-gray-200" />
+      </div>
+      <div className="h-10 w-56 animate-pulse rounded-lg bg-gray-200" />
+    </div>
+  );
+}
+
+function ProductsFallback() {
+  return (
+    <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50">
+      <p className="text-gray-500">Ürünler yükleniyor...</p>
+    </div>
+  );
+}
+
+export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="mx-auto w-full max-w-screen-2xl px-6 md:px-8">
         <section className="relative mb-12 overflow-hidden rounded-xl bg-indigo-600 text-white shadow-xl shadow-indigo-200">
           <div className="relative z-10 grid items-center gap-8 px-6 py-12 lg:grid-cols-2 lg:px-12 lg:py-16">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/30 px-3 py-1 text-xs font-medium text-indigo-100 backdrop-blur-sm border border-indigo-400/30">
+              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/30 px-3 py-1 text-xs font-medium text-indigo-100 backdrop-blur-sm">
                 <Zap className="h-3 w-3 text-yellow-300" />
                 <span>Yeni Sezon İndirimleri Başladı</span>
               </div>
+
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
                 Teknolojiyi Keşfet, <br />
                 <span className="text-indigo-200">Fark Yarat.</span>
               </h1>
+
               <p className="max-w-md text-lg text-indigo-100">
                 En yeni teknoloji ürünlerinde indirimleri kaçırma. Sınırlı stok!
               </p>
@@ -56,10 +80,14 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <FilterBar />
+          <Suspense fallback={<FilterBarFallback />}>
+            <FilterBar />
+          </Suspense>
         </div>
 
-        <HomeProductsClient />
+        <Suspense fallback={<ProductsFallback />}>
+          <HomeProductsClient />
+        </Suspense>
       </div>
     </main>
   );

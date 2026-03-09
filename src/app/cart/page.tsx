@@ -6,6 +6,7 @@ import useSWR, { mutate } from "swr";
 import useSWRMutation from "swr/mutation";
 import { auth } from "@/lib/firebase/client";
 import { useAuthStore } from "@/store/authStore";
+import { AlertCircle, } from "lucide-react";
 import { cartRemove, cartSetQty, getCart } from "@/lib/api/cart";
 import {
     Minus,

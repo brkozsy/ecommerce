@@ -75,7 +75,7 @@ export default function RegisterPage() {
                 <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-transparent to-gray-900/40" />
             </div>
 
-            <div className="relative z-10 w-full max-w-[420px] space-y-8">
+            <div className="relative z-10 w-full max-w-420px space-y-8">
 
                 <div className="text-center">
                     <Link href="/" className="inline-flex items-center gap-2 group">
@@ -98,7 +98,7 @@ export default function RegisterPage() {
 
                     {errors.root?.message && (
                         <div className="mb-6 flex items-start gap-3 rounded-2xl p-4 text-sm font-semibold border border-red-200 bg-red-50 text-red-700">
-                            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                             <span>{errors.root.message}</span>
                         </div>
                     )}
