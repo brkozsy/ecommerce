@@ -1,8 +1,28 @@
-"use client";
-
+import { Suspense } from "react";
 import FilterBar from "@/components/FilterBar";
 import HomeProductsClient from "@/components/HomeProductsClient";
 import { ShoppingBag, Truck, ShieldCheck, Zap, Tag } from "lucide-react";
+
+function FilterBarFallback() {
+  return (
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap gap-2">
+        <div className="h-10 w-20 animate-pulse rounded-full bg-gray-200" />
+        <div className="h-10 w-24 animate-pulse rounded-full bg-gray-200" />
+        <div className="h-10 w-28 animate-pulse rounded-full bg-gray-200" />
+      </div>
+      <div className="h-10 w-56 animate-pulse rounded-lg bg-gray-200" />
+    </div>
+  );
+}
+
+function ProductsFallback() {
+  return (
+    <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50">
+      <p className="text-gray-500">Ürünler yükleniyor...</p>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -11,7 +31,7 @@ export default function HomePage() {
         <section className="relative mb-12 overflow-hidden rounded-xl bg-indigo-600 text-white shadow-xl shadow-indigo-200">
           <div className="relative z-10 grid items-center gap-8 px-6 py-12 lg:grid-cols-2 lg:px-12 lg:py-16">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/30 px-3 py-1 text-xs font-medium text-indigo-100 backdrop-blur-sm border border-indigo-400/30">
+              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/30 px-3 py-1 text-xs font-medium text-indigo-100 backdrop-blur-sm">
                 <Zap className="h-3 w-3 text-yellow-300" />
                 <span>Yeni Sezon İndirimleri Başladı</span>
               </div>
@@ -29,14 +49,12 @@ export default function HomePage() {
         </section>
 
         <section className="mb-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {(
-            [
-              { icon: Truck, title: "Hızlı Teslimat", desc: "Aynı gün kargo imkanı" },
-              { icon: ShieldCheck, title: "Güvenli Ödeme", desc: "256-bit SSL koruması" },
-              { icon: Tag, title: "Uygun Fiyat", desc: "En iyi fiyat garantisi" },
-              { icon: ShoppingBag, title: "Kolay İade", desc: "14 gün içinde iade hakkı" },
-            ] as const
-          ).map((feature, idx) => (
+          {[
+            { icon: Truck, title: "Hızlı Teslimat", desc: "Aynı gün kargo imkanı" },
+            { icon: ShieldCheck, title: "Güvenli Ödeme", desc: "256-bit SSL koruması" },
+            { icon: Tag, title: "Uygun Fiyat", desc: "En iyi fiyat garantisi" },
+            { icon: ShoppingBag, title: "Kolay İade", desc: "14 gün içinde iade hakkı" },
+          ].map((feature, idx) => (
             <div
               key={idx}
               className="flex items-start gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
@@ -62,10 +80,14 @@ export default function HomePage() {
             </p>
           </div>
 
-          <FilterBar />
+          <Suspense fallback={<FilterBarFallback />}>
+            <FilterBar />
+          </Suspense>
         </div>
 
-        <HomeProductsClient />
+        <Suspense fallback={<ProductsFallback />}>
+          <HomeProductsClient />
+        </Suspense>
       </div>
     </main>
   );
