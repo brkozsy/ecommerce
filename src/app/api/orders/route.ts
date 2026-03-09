@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendOrderEmail } from "@/lib/server/sendOrderEmail";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,9 @@ function getBearer(req: Request) {
 export async function GET(req: Request) {
     try {
         const token = getBearer(req);
-        if (!token) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+        if (!token) {
+            return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+        }
 
         const { adminAuth, adminDb } = await import("@/lib/server/firebase/admin");
         const decoded = await adminAuth.verifyIdToken(token);
@@ -28,26 +31,35 @@ export async function GET(req: Request) {
             const createdAt = data.createdAt?.toDate?.()
                 ? data.createdAt.toDate().getTime()
                 : Number(data.createdAt ?? Date.now());
+
             return { id: d.id, ...data, createdAt };
         });
 
         return NextResponse.json({ ok: true, items });
     } catch (e: any) {
-        return NextResponse.json({ ok: false, error: e?.message ?? "Server error" }, { status: 500 });
+        return NextResponse.json(
+            { ok: false, error: e?.message ?? "Server error" },
+            { status: 500 }
+        );
     }
 }
 
 export async function POST(req: Request) {
     try {
         const token = getBearer(req);
-        if (!token) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+        if (!token) {
+            return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+        }
 
         const body = await req.json().catch(() => null);
-        if (!body) return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+        if (!body) {
+            return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+        }
 
         const { adminAuth, adminDb } = await import("@/lib/server/firebase/admin");
         const decoded = await adminAuth.verifyIdToken(token);
         const uid = decoded.uid;
+        const customerEmail = decoded.email ?? "";
 
         const shipping = body.shipping ?? {};
         const payment = body.payment ?? {};
@@ -57,14 +69,23 @@ export async function POST(req: Request) {
         const result = await adminDb.runTransaction(async (tx) => {
             const cartSnap = await tx.get(cartRef);
             const cartData: any = cartSnap.exists ? cartSnap.data() : {};
-            const cartItems: Array<{ productId: string; qty: number }> = Array.isArray(cartData.items) ? cartData.items : [];
+            const cartItems: Array<{ productId: string; qty: number }> = Array.isArray(cartData.items)
+                ? cartData.items
+                : [];
 
             if (!cartItems.length) throw new Error("Sepet boş");
 
             const productRefs = cartItems.map((it) => adminDb.collection("products").doc(it.productId));
             const productSnaps = await Promise.all(productRefs.map((r) => tx.get(r)));
 
-            const orderItems: any[] = [];
+            const orderItems: Array<{
+                id: string;
+                title: string;
+                price: number;
+                qty: number;
+                imageUrl: string;
+                category: string;
+            }> = [];
 
             for (let i = 0; i < cartItems.length; i++) {
                 const it = cartItems[i];
@@ -88,7 +109,6 @@ export async function POST(req: Request) {
                 });
             }
 
-            // stok düş
             for (let i = 0; i < cartItems.length; i++) {
                 const it = cartItems[i];
                 const pRef = productRefs[i];
@@ -102,6 +122,7 @@ export async function POST(req: Request) {
             const total = orderItems.reduce((s, it) => s + Number(it.price) * Number(it.qty), 0);
 
             const orderRef = adminDb.collection("orders").doc();
+
             tx.set(orderRef, {
                 userId: uid,
                 items: orderItems,
@@ -112,17 +133,42 @@ export async function POST(req: Request) {
                 createdAt: new Date(),
             });
 
-            // cart temizle
             tx.set(cartRef, { items: [], updatedAt: new Date() }, { merge: true });
 
-            return { orderId: orderRef.id };
+            return {
+                orderId: orderRef.id,
+                total,
+                items: orderItems,
+            };
         });
+
+        try {
+            await sendOrderEmail({
+                orderId: result.orderId,
+                customerEmail,
+                total: result.total,
+                items: result.items.map((item) => ({
+                    title: item.title,
+                    price: item.price,
+                    qty: item.qty,
+                })),
+            });
+        } catch (mailError) {
+            console.error("Sipariş maili gönderilemedi:", mailError);
+        }
 
         return NextResponse.json({ ok: true, id: result.orderId }, { status: 201 });
     } catch (e: any) {
         const msg = e?.message ?? "Server error";
-        if (msg === "Stok yetersiz") return NextResponse.json({ ok: false, error: msg }, { status: 409 });
-        if (msg === "Sepet boş") return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+
+        if (msg === "Stok yetersiz") {
+            return NextResponse.json({ ok: false, error: msg }, { status: 409 });
+        }
+
+        if (msg === "Sepet boş") {
+            return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+        }
+
         return NextResponse.json({ ok: false, error: msg }, { status: 500 });
     }
 }
